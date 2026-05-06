@@ -10,6 +10,12 @@ import 'features/qr/presentation/pages/qr_tiempo_page.dart';
 import 'features/salidas_cobros/presentation/pages/salidas_cobros_page.dart';
 import 'features/perfil/presentation/pages/perfil_page.dart';
 
+import 'features/ingresos/presentation/pages/registrar_ingreso_page.dart';
+import 'features/vehiculos/presentation/pages/vehiculos_estacionados_page.dart';
+import 'features/historial/presentation/pages/historial_page.dart';
+import 'features/tarifas/presentation/pages/tarifas_page.dart';
+import 'features/admin/presentation/pages/admin_dashboard_page.dart';
+
 void main() {
   runApp(const LaMadrigueraApp());
 }
@@ -41,6 +47,12 @@ class LaMadrigueraApp extends StatelessWidget {
         '/qr-tiempo': (_) => const QrTiempoPage(),
         '/cobro': (_) => const CobroPage(),
         '/perfil': (_) => const PerfilPage(),
+        
+        '/registrar-ingreso': (_) => RegistrarIngresoPage(),
+        '/vehiculos-estacionados': (_) => VehiculosEstacionadosPage(),
+        '/historial': (_) => HistorialPage(),
+        '/tarifas': (_) => TarifasPage(),
+        '/admin-dashboard': (_) => AdminDashboardPage(),
       },
     );
   }
