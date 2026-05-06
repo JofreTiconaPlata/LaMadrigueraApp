@@ -1,53 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:la_madriguera/app/router/route_names.dart';
-import 'package:la_madriguera/shared/enums/rol_enum.dart';
-import 'package:la_madriguera/shared/providers/session_provider.dart';
 
-class LoginPage extends ConsumerWidget {
+class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
-  void _login(BuildContext context, WidgetRef ref, RolEnum rol) {
-    ref.read(sessionProvider.notifier).state = SessionActions.buildUserByRole(
-      rol,
-    );
-
-    Navigator.pushReplacementNamed(context, RouteNames.redirect);
-  }
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('La Madriguera')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Icon(Icons.local_parking, size: 90),
-            const SizedBox(height: 16),
-            const Text(
-              'Bienvenido a La Madriguera',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const Icon(Icons.local_parking, size: 90, color: Color(0xFF2E7D32)),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'La Madriguera',
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Encuentra y administra parqueos fácilmente'),
+                  const SizedBox(height: 32),
+
+                  TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Correo electrónico',
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+                      child: const Text('Iniciar sesión'),
+                    ),
+                  ),
+
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, '/register'),
+                    child: const Text('Crear cuenta nueva'),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () => _login(context, ref, RolEnum.cliente),
-              child: const Text('Entrar como Cliente'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => _login(context, ref, RolEnum.operador),
-              child: const Text('Entrar como Operador'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => _login(context, ref, RolEnum.administrador),
-              child: const Text('Entrar como Administrador'),
-            ),
-          ],
+          ),
         ),
       ),
     );

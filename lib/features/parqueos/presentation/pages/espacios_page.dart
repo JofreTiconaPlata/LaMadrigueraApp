@@ -5,24 +5,17 @@ class EspaciosPage extends StatelessWidget {
 
   Widget _spaceButton(BuildContext context, int number, bool ocupado) {
     return InkWell(
-      onTap: ocupado
-          ? null
-          : () {
-              Navigator.pushNamed(context, '/qr-tiempo');
-            },
+      onTap: ocupado ? null : () => Navigator.pushNamed(context, '/qr-tiempo'),
       child: Container(
         decoration: BoxDecoration(
           color: ocupado ? Colors.red.shade100 : Colors.green.shade100,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: ocupado ? Colors.red : Colors.green,
-          ),
+          border: Border.all(color: ocupado ? Colors.red : Colors.green),
         ),
         child: Center(
           child: Text(
             'A$number',
             style: TextStyle(
-              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: ocupado ? Colors.red : Colors.green.shade800,
             ),
@@ -37,24 +30,14 @@ class EspaciosPage extends StatelessWidget {
     final ocupados = {2, 5, 9};
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seleccionar espacio'),
-      ),
+      appBar: AppBar(title: const Text('Seleccionar espacio')),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             const Text(
               'Espacios para autos',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Verde = disponible / Rojo = ocupado',
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -67,11 +50,7 @@ class EspaciosPage extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final number = index + 1;
-                  return _spaceButton(
-                    context,
-                    number,
-                    ocupados.contains(number),
-                  );
+                  return _spaceButton(context, number, ocupados.contains(number));
                 },
               ),
             ),
