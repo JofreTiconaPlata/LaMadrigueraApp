@@ -3,46 +3,20 @@ import 'package:flutter/material.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Widget _menuButton(
+  Widget _drawerOption(
     BuildContext context,
-    String title,
     IconData icon,
+    String title,
     String route,
   ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: const Color(0xFF2E7D32),
-          child: Icon(icon, color: Colors.white),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.pushNamed(context, route),
-      ),
-    );
-  }
-
-  Widget _parkingCard(
-    BuildContext context,
-    String title,
-    String address,
-    String price,
-  ) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFF2E7D32),
-          child: Icon(Icons.local_parking, color: Colors.white),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(address),
-        trailing: Text(price, style: const TextStyle(fontWeight: FontWeight.bold)),
-        onTap: () => Navigator.pushNamed(context, '/detalle-parqueo'),
-      ),
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF2E7D32)),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushNamed(context, route);
+      },
     );
   }
 
@@ -51,56 +25,115 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       drawer: Drawer(
         child: SafeArea(
-          child: Column(
+          child: ListView(
             children: [
-              const ListTile(
-                leading: Icon(Icons.local_parking),
-                title: Text('La Madriguera'),
-                subtitle: Text('Menú principal'),
+              const UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Color(0xFF2E7D32),
+                ),
+                accountName: Text('Usuario La Madriguera'),
+                accountEmail: Text('usuario@gmail.com'),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 42,
+                    color: Color(0xFF2E7D32),
+                  ),
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Perfil'),
-                onTap: () => Navigator.pushNamed(context, '/perfil'),
+
+              _drawerOption(
+                context,
+                Icons.person,
+                'Mi perfil',
+                '/perfil',
               ),
-              ListTile(
-                leading: const Icon(Icons.login),
-                title: const Text('Registrar ingreso'),
-                onTap: () => Navigator.pushNamed(context, '/registrar-ingreso'),
+              _drawerOption(
+                context,
+                Icons.login,
+                'Registrar ingreso de vehículo',
+                '/registrar-ingreso',
               ),
-              ListTile(
-                leading: const Icon(Icons.directions_car),
-                title: const Text('Vehículos estacionados'),
-                onTap: () => Navigator.pushNamed(context, '/vehiculos-estacionados'),
+              _drawerOption(
+                context,
+                Icons.directions_car,
+                'Vehículos estacionados',
+                '/vehiculos-estacionados',
               ),
-              ListTile(
-                leading: const Icon(Icons.admin_panel_settings),
-                title: const Text('Panel administrativo'),
-                onTap: () => Navigator.pushNamed(context, '/admin-dashboard'),
+              _drawerOption(
+                context,
+                Icons.local_parking,
+                'Disponibilidad de espacios',
+                '/espacios',
               ),
+              _drawerOption(
+                context,
+                Icons.history,
+                'Historial',
+                '/historial',
+              ),
+              _drawerOption(
+                context,
+                Icons.payments,
+                'Tarifas',
+                '/tarifas',
+              ),
+              _drawerOption(
+                context,
+                Icons.admin_panel_settings,
+                'Panel administrativo',
+                '/admin-dashboard',
+              ),
+              _drawerOption(
+                context,
+                Icons.add_location_alt,
+                'Crear parqueo',
+                '/crear-parqueo',
+              ),
+              _drawerOption(
+                context,
+                Icons.qr_code_2,
+                'Código QR',
+                '/qr-tiempo',
+              ),
+
+              const Divider(),
+
               ListTile(
-                leading: const Icon(Icons.logout),
+                leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Cerrar sesión'),
-                onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
               ),
             ],
           ),
         ),
       ),
+
       appBar: AppBar(
         title: const Text('Parqueos cercanos'),
         actions: [
-          IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/perfil'),
-            icon: const Icon(Icons.person_outline),
+          Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.person_outline),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              );
+            },
           ),
         ],
       ),
+
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Container(
-            height: 230,
+            height: 520,
             width: double.infinity,
             decoration: BoxDecoration(
               color: const Color(0xFFDDEFE0),
@@ -110,86 +143,20 @@ class HomePage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.map, size: 80, color: Color(0xFF2E7D32)),
-                  SizedBox(height: 8),
+                  Icon(Icons.map, size: 90, color: Color(0xFF2E7D32)),
+                  SizedBox(height: 10),
                   Text(
                     'Mapa de parqueos',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Text('Aquí luego puedes conectar Google Maps'),
+                  Text('Aquí luego conectaremos Google Maps'),
                 ],
               ),
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'Acciones rápidas',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          _menuButton(
-            context,
-            'Registrar ingreso de vehículo',
-            Icons.login,
-            '/registrar-ingreso',
-          ),
-          _menuButton(
-            context,
-            'Vehículos estacionados',
-            Icons.directions_car,
-            '/vehiculos-estacionados',
-          ),
-          _menuButton(
-            context,
-            'Disponibilidad de espacios',
-            Icons.local_parking,
-            '/espacios',
-          ),
-          _menuButton(
-            context,
-            'Historial',
-            Icons.history,
-            '/historial',
-          ),
-          _menuButton(
-            context,
-            'Tarifas',
-            Icons.payments,
-            '/tarifas',
-          ),
-          _menuButton(
-            context,
-            'Panel administrativo',
-            Icons.admin_panel_settings,
-            '/admin-dashboard',
-          ),
-          _menuButton(
-            context,
-            'Crear parqueo',
-            Icons.add_location_alt,
-            '/crear-parqueo',
-          ),
-          _menuButton(
-            context,
-            'Código QR',
-            Icons.qr_code_2,
-            '/qr-tiempo',
-          ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'Parqueos disponibles',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-
-          _parkingCard(context, 'Parqueo Central', 'Av. América #123', 'Bs 5/h'),
-          _parkingCard(context, 'Parqueo Norte', 'Zona Queru Queru', 'Bs 4/h'),
-          _parkingCard(context, 'Parqueo Seguro', 'Cerca del centro', 'Bs 6/h'),
         ],
       ),
     );
