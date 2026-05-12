@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  static final LatLng _centroMapa = LatLng(-17.7833, -63.1821);
 
   Widget _drawerOption(
     BuildContext context,
@@ -175,7 +179,6 @@ class HomePage extends StatelessWidget {
             height: 520,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppTheme.lightGreen,
               borderRadius: BorderRadius.circular(22),
               border: Border.all(color: const Color(0xFFB7D6B9)),
               boxShadow: const [
@@ -186,31 +189,32 @@ class HomePage extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.map,
-                    size: 90,
-                    color: AppTheme.primaryGreen,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Mapa de parqueos',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Aquí luego conectaremos Google Maps',
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
-                ],
+            clipBehavior: Clip.antiAlias,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: _centroMapa,
+                initialZoom: 14,
               ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.programovil.lamadriguera',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _centroMapa,
+                      width: 50,
+                      height: 50,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 45,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
