@@ -9,7 +9,8 @@ class RegistrarIngresoPage extends StatefulWidget {
 
 class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
   final TextEditingController placaController = TextEditingController();
-  final TextEditingController horaController = TextEditingController(text: 'Ahora');
+  final TextEditingController horaController =
+      TextEditingController(text: 'Ahora');
 
   String tipoVehiculo = 'Auto';
   String espacioAsignado = 'A1';
@@ -54,7 +55,6 @@ class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
             'Registra la entrada del vehículo y asigna un espacio disponible.',
           ),
           const SizedBox(height: 24),
-
           TextField(
             controller: placaController,
             textCapitalization: TextCapitalization.characters,
@@ -66,11 +66,9 @@ class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
           DropdownButtonFormField<String>(
-            value: tipoVehiculo,
+            initialValue: tipoVehiculo,
             decoration: InputDecoration(
               labelText: 'Tipo de vehículo',
               prefixIcon: const Icon(Icons.category),
@@ -88,9 +86,7 @@ class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
               });
             },
           ),
-
           const SizedBox(height: 16),
-
           TextField(
             controller: horaController,
             decoration: InputDecoration(
@@ -101,11 +97,9 @@ class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 16),
-
           DropdownButtonFormField<String>(
-            value: espacioAsignado,
+            initialValue: espacioAsignado,
             decoration: InputDecoration(
               labelText: 'Espacio asignado',
               prefixIcon: const Icon(Icons.local_parking),
@@ -124,9 +118,7 @@ class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
               });
             },
           ),
-
           const SizedBox(height: 28),
-
           SizedBox(
             height: 52,
             child: ElevatedButton.icon(

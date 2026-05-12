@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:la_madriguera/app/router/route_names.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  static final LatLng _centroMapa = LatLng(-17.7833, -63.1821);
 
   Widget _drawerOption(
     BuildContext context,
@@ -10,9 +16,21 @@ class HomePage extends StatelessWidget {
     String route,
   ) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF2E7D32)),
-      title: Text(title),
-      trailing: const Icon(Icons.chevron_right),
+      leading: Icon(icon, color: AppTheme.primaryGreen),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: AppTheme.textSecondary,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
       onTap: () {
         Navigator.pop(context);
         Navigator.pushNamed(context, route);
@@ -23,98 +41,124 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.background,
       drawer: Drawer(
+        backgroundColor: Colors.white,
         child: SafeArea(
           child: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             children: [
               const UserAccountsDrawerHeader(
                 decoration: BoxDecoration(
-                  color: Color(0xFF2E7D32),
+                  color: AppTheme.primaryGreen,
                 ),
-                accountName: Text('Usuario La Madriguera'),
-                accountEmail: Text('usuario@gmail.com'),
+                accountName: Text(
+                  'Usuario La Madriguera',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                accountEmail: Text(
+                  'usuario@gmail.com',
+                  style: TextStyle(color: Colors.white70),
+                ),
                 currentAccountPicture: CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.person,
                     size: 42,
-                    color: Color(0xFF2E7D32),
+                    color: AppTheme.primaryGreen,
                   ),
                 ),
               ),
-
               _drawerOption(
                 context,
                 Icons.person,
                 'Mi perfil',
-                '/perfil',
+                RouteNames.perfil,
               ),
               _drawerOption(
                 context,
                 Icons.login,
                 'Registrar ingreso de vehículo',
-                '/registrar-ingreso',
+                RouteNames.registrarIngreso,
               ),
               _drawerOption(
                 context,
                 Icons.directions_car,
                 'Vehículos estacionados',
-                '/vehiculos-estacionados',
+                RouteNames.vehiculosEstacionados,
               ),
               _drawerOption(
                 context,
                 Icons.local_parking,
                 'Disponibilidad de espacios',
-                '/espacios',
+                RouteNames.espacios,
               ),
               _drawerOption(
                 context,
                 Icons.history,
                 'Historial',
-                '/historial',
+                RouteNames.historial,
               ),
               _drawerOption(
                 context,
                 Icons.payments,
                 'Tarifas',
-                '/tarifas',
+                RouteNames.tarifas,
+              ),
+              _drawerOption(
+                context,
+                Icons.point_of_sale,
+                'Cobro y salida',
+                RouteNames.salidasCobros,
               ),
               _drawerOption(
                 context,
                 Icons.admin_panel_settings,
                 'Panel administrativo',
-                '/admin-dashboard',
+                RouteNames.adminDashboard,
               ),
               _drawerOption(
                 context,
                 Icons.add_location_alt,
                 'Crear parqueo',
-                '/crear-parqueo',
+                RouteNames.crearParqueo,
               ),
               _drawerOption(
                 context,
                 Icons.qr_code_2,
                 'Código QR',
-                '/qr-tiempo',
+                RouteNames.qrTiempo,
               ),
-
-              const Divider(),
-
+              const Divider(height: 24),
               ListTile(
-                leading: const Icon(Icons.logout, color: Colors.red),
-                title: const Text('Cerrar sesión'),
+                leading: const Icon(Icons.logout, color: Colors.redAccent),
+                title: const Text(
+                  'Cerrar sesión',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, '/login');
+                  Navigator.pushReplacementNamed(context, RouteNames.login);
                 },
               ),
             ],
           ),
         ),
       ),
-
       appBar: AppBar(
-        title: const Text('Parqueos cercanos'),
+        title: const Text(
+          'Parqueos cercanos',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           Builder(
             builder: (context) {
@@ -128,7 +172,6 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -136,25 +179,42 @@ class HomePage extends StatelessWidget {
             height: 520,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFFDDEFE0),
               borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFB7D6B9)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.map, size: 90, color: Color(0xFF2E7D32)),
-                  SizedBox(height: 10),
-                  Text(
-                    'Mapa de parqueos',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text('Aquí luego conectaremos Google Maps'),
-                ],
+            clipBehavior: Clip.antiAlias,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: _centroMapa,
+                initialZoom: 14,
               ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.programovil.lamadriguera',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _centroMapa,
+                      width: 50,
+                      height: 50,
+                      child: const Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 45,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
