@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
+import 'package:la_madriguera/features/parqueos/presentation/providers/parqueos_provider.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -34,6 +36,86 @@ class HomePage extends StatelessWidget {
       onTap: () {
         Navigator.pop(context);
         Navigator.pushNamed(context, route);
+      },
+    );
+  }
+
+  void _mostrarDetalleParqueo(
+    BuildContext context,
+    ParqueoEntity parqueo,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Wrap(
+            runSpacing: 12,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryGreen,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.local_parking,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      parqueo.nombre,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                parqueo.direccion,
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+              Text(
+                'Espacios: ${parqueo.espaciosTotales} '
+                '(${parqueo.espaciosAutos} autos, ${parqueo.espaciosMotos} motos)',
+                style: const TextStyle(color: AppTheme.textPrimary),
+              ),
+              Text(
+                'Precio por hora: ${parqueo.precioHora.toStringAsFixed(2)} Bs',
+                style: const TextStyle(color: AppTheme.textPrimary),
+              ),
+              Text(
+                'Ubicación: ${parqueo.latitud.toStringAsFixed(6)}, '
+                '${parqueo.longitud.toStringAsFixed(6)}',
+                style: const TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.visibility),
+                  label: const Text('Ver detalle'),
+                ),
+              ),
+            ],
+          ),
+        );
       },
     );
   }
@@ -200,19 +282,43 @@ class HomePage extends StatelessWidget {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.programovil.lamadriguera',
                 ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _centroMapa,
-                      width: 50,
-                      height: 50,
-                      child: const Icon(
-                        Icons.location_on,
-                        color: Colors.red,
-                        size: 45,
-                      ),
-                    ),
-                  ],
+                ValueListenableBuilder<List<ParqueoEntity>>(
+                  valueListenable: ParqueosProvider.parqueosNotifier,
+                  builder: (context, parqueos, _) {
+                    return MarkerLayer(
+                      markers: parqueos.map((parqueo) {
+                        return Marker(
+                          point: LatLng(parqueo.latitud, parqueo.longitud),
+                          width: 56,
+                          height: 56,
+                          child: GestureDetector(
+                            onTap: () => _mostrarDetalleParqueo(
+                              context,
+                              parqueo,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryGreen,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.local_parking,
+                                color: Colors.white,
+                                size: 34,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
                 ),
               ],
             ),
