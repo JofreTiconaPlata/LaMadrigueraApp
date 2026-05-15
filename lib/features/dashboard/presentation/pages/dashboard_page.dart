@@ -5,6 +5,7 @@ import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/parqueos/presentation/providers/parqueos_provider.dart';
+import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -49,7 +50,7 @@ class HomePage extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return Padding(
           padding: const EdgeInsets.all(20),
           child: Wrap(
@@ -107,10 +108,15 @@ class HomePage extends StatelessWidget {
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
+                    Navigator.pushNamed(
+                      context,
+                      RouteNames.crearReserva,
+                      arguments: parqueo,
+                    );
                   },
-                  icon: const Icon(Icons.visibility),
-                  label: const Text('Ver detalle'),
+                  icon: const Icon(Icons.timer),
+                  label: const Text('Reservar espacio'),
                 ),
               ),
             ],
@@ -323,6 +329,8 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          const ReservaActivaCard(),
         ],
       ),
     );
