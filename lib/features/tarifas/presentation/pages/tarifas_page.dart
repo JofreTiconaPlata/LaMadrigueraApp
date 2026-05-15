@@ -15,7 +15,9 @@ class TarifasPage extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Formulario de nueva tarifa próximamente')),
+            const SnackBar(
+              content: Text('Formulario de nueva tarifa próximamente'),
+            ),
           );
         },
         child: const Icon(Icons.add),
@@ -38,7 +40,9 @@ class TarifasPage extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.payments),
                 title: Text('${t['tipo']} - ${t['valor']}'),
-                subtitle: Text('Unidad: ${t['unidad']} | Estado: ${t['estado']}'),
+                subtitle: Text(
+                  'Unidad: ${t['unidad']} | Estado: ${t['estado']}',
+                ),
                 trailing: const Icon(Icons.edit),
               ),
             );

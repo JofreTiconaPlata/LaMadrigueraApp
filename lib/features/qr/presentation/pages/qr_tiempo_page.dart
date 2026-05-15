@@ -31,10 +31,7 @@ class QrTiempoPage extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-            const Text(
-              'Tiempo transcurrido',
-              style: TextStyle(fontSize: 18),
-            ),
+            const Text('Tiempo transcurrido', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
             const Text(
               '00:45:00',

@@ -42,7 +42,10 @@ class CobroPage extends StatelessWidget {
                     const Divider(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [const Text('Precio/hora'), Text('Bs $precioHora')],
+                      children: [
+                        const Text('Precio/hora'),
+                        Text('Bs $precioHora'),
+                      ],
                     ),
                     const Divider(),
                     Row(

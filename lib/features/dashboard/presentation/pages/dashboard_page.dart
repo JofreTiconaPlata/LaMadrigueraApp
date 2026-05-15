@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
@@ -26,13 +26,8 @@ class HomePage extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: AppTheme.textSecondary,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       onTap: () {
         Navigator.pop(context);
         Navigator.pushNamed(context, route);
@@ -40,10 +35,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  void _mostrarDetalleParqueo(
-    BuildContext context,
-    ParqueoEntity parqueo,
-  ) {
+  void _mostrarDetalleParqueo(BuildContext context, ParqueoEntity parqueo) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -64,10 +56,7 @@ class HomePage extends StatelessWidget {
                       color: AppTheme.primaryGreen,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(
-                      Icons.local_parking,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.local_parking, color: Colors.white),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -131,9 +120,7 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             children: [
               const UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen,
-                ),
+                decoration: BoxDecoration(color: AppTheme.primaryGreen),
                 accountName: Text(
                   'Usuario La Madriguera',
                   style: TextStyle(
@@ -273,10 +260,7 @@ class HomePage extends StatelessWidget {
             ),
             clipBehavior: Clip.antiAlias,
             child: FlutterMap(
-              options: MapOptions(
-                initialCenter: _centroMapa,
-                initialZoom: 14,
-              ),
+              options: MapOptions(initialCenter: _centroMapa, initialZoom: 14),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -292,10 +276,8 @@ class HomePage extends StatelessWidget {
                           width: 56,
                           height: 56,
                           child: GestureDetector(
-                            onTap: () => _mostrarDetalleParqueo(
-                              context,
-                              parqueo,
-                            ),
+                            onTap: () =>
+                                _mostrarDetalleParqueo(context, parqueo),
                             child: Container(
                               decoration: BoxDecoration(
                                 color: AppTheme.primaryGreen,

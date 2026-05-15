@@ -31,9 +31,7 @@ class VehiculosEstacionadosPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
               ),
               child: ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.directions_car),
-                ),
+                leading: const CircleAvatar(child: Icon(Icons.directions_car)),
                 title: Text(v['placa']!),
                 subtitle: Text(
                   'Tipo: ${v['tipo']} | Hora: ${v['hora']} | Espacio: ${v['espacio']}',

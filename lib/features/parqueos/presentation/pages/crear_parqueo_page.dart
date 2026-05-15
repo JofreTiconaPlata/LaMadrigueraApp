@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
@@ -43,9 +43,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
 
     if (_ubicacionSeleccionada == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona una ubicación en el mapa.'),
-        ),
+        const SnackBar(content: Text('Selecciona una ubicación en el mapa.')),
       );
       return;
     }
@@ -64,9 +62,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
     ParqueosProvider.agregarParqueo(parqueo);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Parqueo registrado correctamente.'),
-      ),
+      const SnackBar(content: Text('Parqueo registrado correctamente.')),
     );
 
     Navigator.pop(context);
@@ -120,9 +116,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -142,10 +136,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
         const SizedBox(height: 8),
         const Text(
           'Toca el mapa para marcar dónde estará ubicado el parqueo.',
-          style: TextStyle(
-            color: AppTheme.textSecondary,
-            fontSize: 13,
-          ),
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
         ),
         const SizedBox(height: 12),
         Container(
@@ -206,10 +197,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
           Text(
             'Lat: ${_ubicacionSeleccionada!.latitude.toStringAsFixed(6)}  '
             'Lng: ${_ubicacionSeleccionada!.longitude.toStringAsFixed(6)}',
-            style: const TextStyle(
-              color: AppTheme.textSecondary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
         ],
       ],

@@ -27,9 +27,7 @@ class VehiculosEstacionadosPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vehículos estacionados'),
-      ),
+      appBar: AppBar(title: const Text('Vehículos estacionados')),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: vehiculos.length,
@@ -44,10 +42,7 @@ class VehiculosEstacionadosPage extends StatelessWidget {
             child: ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Color(0xFFE8F5E9),
-                child: Icon(
-                  Icons.directions_car,
-                  color: Color(0xFF2E7D32),
-                ),
+                child: Icon(Icons.directions_car, color: Color(0xFF2E7D32)),
               ),
               title: Text(
                 vehiculo['placa']!,

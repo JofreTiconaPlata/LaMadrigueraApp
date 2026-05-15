@@ -12,7 +12,10 @@ class AdminDashboardPage extends StatelessWidget {
           children: [
             Icon(icon, size: 38, color: Color(0xFF2E7D32)),
             const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
             Text(title, textAlign: TextAlign.center),
           ],
         ),
@@ -23,9 +26,7 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Panel administrativo'),
-      ),
+      appBar: AppBar(title: const Text('Panel administrativo')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -58,7 +59,8 @@ class AdminDashboardPage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/vehiculos-estacionados'),
+            onPressed: () =>
+                Navigator.pushNamed(context, '/vehiculos-estacionados'),
             icon: const Icon(Icons.directions_car),
             label: const Text('Vehículos estacionados'),
           ),

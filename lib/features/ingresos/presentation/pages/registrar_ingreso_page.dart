@@ -9,8 +9,9 @@ class RegistrarIngresoPage extends StatefulWidget {
 
 class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
   final TextEditingController placaController = TextEditingController();
-  final TextEditingController horaController =
-      TextEditingController(text: 'Ahora');
+  final TextEditingController horaController = TextEditingController(
+    text: 'Ahora',
+  );
 
   String tipoVehiculo = 'Auto';
   String espacioAsignado = 'A1';
@@ -40,9 +41,7 @@ class _RegistrarIngresoPageState extends State<RegistrarIngresoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Registrar ingreso'),
-      ),
+      appBar: AppBar(title: const Text('Registrar ingreso')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
