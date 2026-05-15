@@ -2,3 +2,8 @@
 *.yml text eol=lf
 *.yaml text eol=lf
 *.dart text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.prisma text eol=lf
+backend/.env.example text eol=lf
+backend/.gitignore text eol=lf
