@@ -29,7 +29,10 @@ class PerfilPage extends StatelessWidget {
               child: Icon(Icons.person, color: Colors.white, size: 50),
             ),
             const SizedBox(height: 12),
-            const Text('Usuario La Madriguera', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              'Usuario La Madriguera',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const Text('usuario@gmail.com'),
             const SizedBox(height: 24),
 

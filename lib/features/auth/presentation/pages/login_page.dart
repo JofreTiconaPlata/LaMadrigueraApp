@@ -25,10 +25,7 @@ class LoginPage extends ConsumerWidget {
                   const SizedBox(height: 12),
                   const Text(
                     'La Madriguera',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text('Encuentra y administra parqueos fácilmente'),

@@ -53,8 +53,8 @@ class AppRouter {
 
       case RouteNames.vehiculosEstacionados:
         return MaterialPageRoute(
-      builder: (_) => const VehiculosEstacionadosPage(),
-      );
+          builder: (_) => const VehiculosEstacionadosPage(),
+        );
       case RouteNames.espacios:
         return MaterialPageRoute(builder: (_) => const EspaciosPage());
 
@@ -78,9 +78,8 @@ class AppRouter {
 
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Ruta no encontrada')),
-          ),
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('Ruta no encontrada'))),
         );
     }
   }
