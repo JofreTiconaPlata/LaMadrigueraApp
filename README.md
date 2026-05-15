@@ -1,17 +1,41 @@
-# la_madriguera
+# LaMadrigueraApp 🅿️📱
 
-A new Flutter project.
+Aplicación móvil desarrollada con **Flutter** para la gestión de parqueos.  
+El proyecto permite trabajar con módulos como autenticación, dashboard, parqueos, vehículos, ingresos, salidas/cobros, QR, disponibilidad, historial, tarifas, perfil y administración.
 
-## Getting Started
+El repositorio está preparado con **GitHub Actions** y protección de rama para asegurar que todo cambio pase validaciones antes de integrarse a `main`.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## Tecnologías utilizadas
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+- Flutter
+- Dart
+- Riverpod
+- GoRouter
+- Dio
+- Shared Preferences
+- Flutter Map / OpenStreetMap
+- Android SDK
+- GitHub Actions
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+---
+
+## Requisitos previos
+
+Antes de clonar el proyecto, instalar:
+
+- Git
+- Flutter SDK
+- Dart SDK
+- Android Studio o Android SDK
+- Android Platform Tools
+- Android Build Tools
+- Visual Studio Code o Android Studio
+
+Verificar instalación:
+
+```bash
+flutter --version
+dart --version
+flutter doctor
