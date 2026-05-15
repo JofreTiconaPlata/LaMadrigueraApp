@@ -14,10 +14,7 @@ class AuthRemoteDataSource {
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.authLogin,
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
 
     return AuthResponseDto.fromJson(response.data!);

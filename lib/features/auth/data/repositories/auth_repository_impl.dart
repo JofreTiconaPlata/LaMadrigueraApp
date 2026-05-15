@@ -4,9 +4,8 @@ import 'package:la_madriguera/features/auth/domain/repositories/auth_repository.
 import 'package:la_madriguera/shared/models/usuario_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  AuthRepositoryImpl({
-    AuthRemoteDataSource? remoteDataSource,
-  }) : _remoteDataSource = remoteDataSource ?? AuthRemoteDataSource();
+  AuthRepositoryImpl({AuthRemoteDataSource? remoteDataSource})
+    : _remoteDataSource = remoteDataSource ?? AuthRemoteDataSource();
 
   final AuthRemoteDataSource _remoteDataSource;
 

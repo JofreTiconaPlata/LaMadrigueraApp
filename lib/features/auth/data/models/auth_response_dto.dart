@@ -5,10 +5,7 @@ class AuthResponseDto {
   final String token;
   final UsuarioModel usuario;
 
-  const AuthResponseDto({
-    required this.token,
-    required this.usuario,
-  });
+  const AuthResponseDto({required this.token, required this.usuario});
 
   factory AuthResponseDto.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>;
