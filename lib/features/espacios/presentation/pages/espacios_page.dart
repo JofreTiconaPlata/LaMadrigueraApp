@@ -33,6 +33,23 @@ class EspaciosPage extends ConsumerWidget {
     Navigator.pushNamed(context, RouteNames.qrTiempo);
   }
 
+  Widget _legendItem({required Color color, required String text}) {
+    return Row(
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(text),
+      ],
+    );
+  }
+
   Widget _spaceButton(
     BuildContext context, {
     required int number,
@@ -154,6 +171,7 @@ class EspaciosPage extends ConsumerWidget {
                 ),
                 itemBuilder: (context, index) {
                   final number = index + 1;
+
                   return _spaceButton(
                     context,
                     number: number,
@@ -166,23 +184,6 @@ class EspaciosPage extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _legendItem({required Color color, required String text}) {
-    return Row(
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(text),
-      ],
     );
   }
 }
