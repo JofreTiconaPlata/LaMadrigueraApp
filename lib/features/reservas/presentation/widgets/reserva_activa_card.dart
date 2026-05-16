@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
@@ -90,7 +90,10 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
               _filaResumen('Parqueo', resumen.reserva.parqueo.nombre),
               _filaResumen('Vehículo', resumen.reserva.tipoVehiculo),
               _filaResumen('Placa', resumen.reserva.placa),
-              _filaResumen('Entrada', _formatearHora(resumen.reserva.horaEntrada)),
+              _filaResumen(
+                'Entrada',
+                _formatearHora(resumen.reserva.horaEntrada),
+              ),
               _filaResumen('Salida', _formatearHora(resumen.horaSalida)),
               _filaResumen(
                 'Tiempo total',
@@ -119,10 +122,7 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
       padding: const EdgeInsets.only(bottom: 8),
       child: RichText(
         text: TextSpan(
-          style: const TextStyle(
-            color: AppTheme.textPrimary,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppTheme.textPrimary, fontSize: 14),
           children: [
             TextSpan(
               text: '$titulo: ',
@@ -146,11 +146,7 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: const Color(0xFFB7D6B9)),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Column(

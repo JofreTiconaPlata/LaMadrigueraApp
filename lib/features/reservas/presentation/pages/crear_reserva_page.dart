@@ -1,14 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/reservas/domain/entities/reserva_activa_entity.dart';
 import 'package:la_madriguera/features/reservas/presentation/providers/reserva_activa_provider.dart';
 
 class CrearReservaPage extends StatefulWidget {
-  const CrearReservaPage({
-    super.key,
-    required this.parqueo,
-  });
+  const CrearReservaPage({super.key, required this.parqueo});
 
   final ParqueoEntity parqueo;
 
@@ -62,9 +59,7 @@ class _CrearReservaPageState extends State<CrearReservaPage> {
     ReservaActivaProvider.iniciarReserva(reserva);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Reserva iniciada correctamente.'),
-      ),
+      const SnackBar(content: Text('Reserva iniciada correctamente.')),
     );
 
     Navigator.pop(context);
@@ -124,10 +119,7 @@ class _CrearReservaPageState extends State<CrearReservaPage> {
     );
   }
 
-  Widget _opcionVehiculo({
-    required String tipo,
-    required IconData icono,
-  }) {
+  Widget _opcionVehiculo({required String tipo, required IconData icono}) {
     final seleccionado = _tipoVehiculo == tipo;
 
     return Expanded(
@@ -192,15 +184,9 @@ class _CrearReservaPageState extends State<CrearReservaPage> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _opcionVehiculo(
-                tipo: 'Auto',
-                icono: Icons.directions_car,
-              ),
+              _opcionVehiculo(tipo: 'Auto', icono: Icons.directions_car),
               const SizedBox(width: 12),
-              _opcionVehiculo(
-                tipo: 'Moto',
-                icono: Icons.two_wheeler,
-              ),
+              _opcionVehiculo(tipo: 'Moto', icono: Icons.two_wheeler),
             ],
           ),
         ],
@@ -212,9 +198,7 @@ class _CrearReservaPageState extends State<CrearReservaPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Reservar espacio'),
-      ),
+      appBar: AppBar(title: const Text('Reservar espacio')),
       body: Form(
         key: _formKey,
         child: ListView(

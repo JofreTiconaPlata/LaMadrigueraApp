@@ -1,4 +1,4 @@
-﻿import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
+import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 
 class ReservaActivaEntity {
   const ReservaActivaEntity({

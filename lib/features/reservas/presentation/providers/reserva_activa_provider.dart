@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:la_madriguera/features/reservas/domain/entities/reserva_activa_entity.dart';
 
 class ReservaActivaProvider {
