@@ -15,6 +15,7 @@ class RouteNames {
   static const String tarifas = '/tarifas';
   static const String adminDashboard = '/admin-dashboard';
   static const String crearParqueo = '/crear-parqueo';
+  static const String crearReserva = '/crear-reserva';
   static const String qrTiempo = '/qr-tiempo';
   static const String salidasCobros = '/salidas-cobros';
 }
