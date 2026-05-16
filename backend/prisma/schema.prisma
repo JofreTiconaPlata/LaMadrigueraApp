@@ -1,0 +1,281 @@
+// Prisma schema para LaMadrigueraApp Backend
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RolUsuario {
+  CLIENTE
+  OPERADOR
+  ADMIN
+}
+
+enum EstadoGeneral {
+  ACTIVO
+  INACTIVO
+}
+
+enum EstadoEspacio {
+  DISPONIBLE
+  OCUPADO
+  RESERVADO
+  MANTENIMIENTO
+}
+
+enum TipoVehiculo {
+  AUTO
+  MOTO
+  CAMIONETA
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  ACTIVA
+  CANCELADA
+  COMPLETADA
+  EXPIRADA
+}
+
+enum EstadoIngreso {
+  ACTIVO
+  FINALIZADO
+  CANCELADO
+}
+
+enum MetodoPago {
+  EFECTIVO
+  QR
+  TARJETA
+  TRANSFERENCIA
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  ANULADO
+}
+
+enum EstadoQr {
+  ACTIVO
+  USADO
+  EXPIRADO
+  ANULADO
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  nombre       String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  telefono     String?
+  rol          RolUsuario    @default(CLIENTE)
+  estado       EstadoGeneral @default(ACTIVO)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  cliente             Cliente?
+  ingresosOperados    Ingreso[]     @relation("IngresoOperador")
+  salidasOperadas     SalidaCobro[] @relation("SalidaOperador")
+  historial           Historial[]
+
+  @@map("usuarios")
+}
+
+model Cliente {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int     @unique @map("usuario_id")
+  ci        String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  vehiculos Vehiculo[]
+  reservas  Reserva[]
+  qrTokens  QrToken[]
+
+  @@map("clientes")
+}
+
+model Parqueo {
+  id              Int           @id @default(autoincrement())
+  nombre          String
+  direccion       String
+  latitud         Decimal       @db.Decimal(10, 7)
+  longitud        Decimal       @db.Decimal(10, 7)
+  espaciosAutos   Int           @default(0) @map("espacios_autos")
+  espaciosMotos   Int           @default(0) @map("espacios_motos")
+  capacidadTotal  Int           @default(0) @map("capacidad_total")
+  estado          EstadoGeneral @default(ACTIVO)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  espacios Espacio[]
+  tarifas  Tarifa[]
+  reservas Reserva[]
+  ingresos Ingreso[]
+
+  @@map("parqueos")
+}
+
+model Espacio {
+  id        Int           @id @default(autoincrement())
+  parqueoId Int          @map("parqueo_id")
+  codigo    String
+  tipo      TipoVehiculo
+  estado    EstadoEspacio @default(DISPONIBLE)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  parqueo  Parqueo   @relation(fields: [parqueoId], references: [id], onDelete: Cascade)
+  reservas Reserva[]
+  ingresos Ingreso[]
+
+  @@unique([parqueoId, codigo])
+  @@map("espacios")
+}
+
+model Vehiculo {
+  id        Int          @id @default(autoincrement())
+  clienteId Int         @map("cliente_id")
+  placa     String      @unique
+  tipo      TipoVehiculo
+  marca     String?
+  modelo    String?
+  color     String?
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  cliente  Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  reservas Reserva[]
+  ingresos Ingreso[]
+
+  @@map("vehiculos")
+}
+
+model Tarifa {
+  id            Int           @id @default(autoincrement())
+  parqueoId     Int          @map("parqueo_id")
+  tipoVehiculo  TipoVehiculo @map("tipo_vehiculo")
+  montoHora     Decimal      @map("monto_hora") @db.Decimal(10, 2)
+  montoFraccion Decimal?     @map("monto_fraccion") @db.Decimal(10, 2)
+  estado        EstadoGeneral @default(ACTIVO)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  parqueo Parqueo @relation(fields: [parqueoId], references: [id], onDelete: Cascade)
+
+  @@unique([parqueoId, tipoVehiculo])
+  @@map("tarifas")
+}
+
+model Reserva {
+  id          Int           @id @default(autoincrement())
+  clienteId   Int          @map("cliente_id")
+  parqueoId   Int          @map("parqueo_id")
+  espacioId   Int?         @map("espacio_id")
+  vehiculoId  Int          @map("vehiculo_id")
+  fechaInicio DateTime     @map("fecha_inicio")
+  fechaFin    DateTime     @map("fecha_fin")
+  estado      EstadoReserva @default(PENDIENTE)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  cliente  Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  parqueo  Parqueo  @relation(fields: [parqueoId], references: [id], onDelete: Cascade)
+  espacio  Espacio? @relation(fields: [espacioId], references: [id], onDelete: SetNull)
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  ingreso  Ingreso?
+  qrTokens QrToken[]
+
+  @@map("reservas")
+}
+
+model Ingreso {
+  id           Int          @id @default(autoincrement())
+  reservaId    Int?        @unique @map("reserva_id")
+  parqueoId    Int         @map("parqueo_id")
+  espacioId    Int         @map("espacio_id")
+  vehiculoId   Int         @map("vehiculo_id")
+  operadorId   Int         @map("operador_id")
+  fechaIngreso DateTime    @default(now()) @map("fecha_ingreso")
+  estado       EstadoIngreso @default(ACTIVO)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  reserva  Reserva? @relation(fields: [reservaId], references: [id], onDelete: SetNull)
+  parqueo  Parqueo  @relation(fields: [parqueoId], references: [id], onDelete: Cascade)
+  espacio  Espacio  @relation(fields: [espacioId], references: [id], onDelete: Cascade)
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id], onDelete: Cascade)
+  operador Usuario  @relation("IngresoOperador", fields: [operadorId], references: [id], onDelete: Restrict)
+
+  salidaCobro SalidaCobro?
+
+  @@map("ingresos")
+}
+
+model SalidaCobro {
+  id                 Int        @id @default(autoincrement())
+  ingresoId           Int       @unique @map("ingreso_id")
+  operadorId          Int       @map("operador_id")
+  fechaSalida         DateTime  @default(now()) @map("fecha_salida")
+  tiempoTotalMinutos  Int       @map("tiempo_total_minutos")
+  montoTotal          Decimal   @map("monto_total") @db.Decimal(10, 2)
+  estadoPago          EstadoPago @default(PENDIENTE) @map("estado_pago")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  ingreso  Ingreso @relation(fields: [ingresoId], references: [id], onDelete: Cascade)
+  operador Usuario @relation("SalidaOperador", fields: [operadorId], references: [id], onDelete: Restrict)
+  pago     Pago?
+
+  @@map("salidas_cobros")
+}
+
+model Pago {
+  id            Int        @id @default(autoincrement())
+  salidaCobroId Int       @unique @map("salida_cobro_id")
+  metodoPago    MetodoPago @map("metodo_pago")
+  monto          Decimal   @db.Decimal(10, 2)
+  referencia     String?
+  estado         EstadoPago @default(PAGADO)
+  fechaPago      DateTime   @default(now()) @map("fecha_pago")
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  salidaCobro SalidaCobro @relation(fields: [salidaCobroId], references: [id], onDelete: Cascade)
+
+  @@map("pagos")
+}
+
+model QrToken {
+  id         Int      @id @default(autoincrement())
+  clienteId  Int     @map("cliente_id")
+  reservaId  Int?    @map("reserva_id")
+  token      String   @unique
+  estado     EstadoQr @default(ACTIVO)
+  expiracion DateTime
+  createdAt  DateTime @default(now()) @map("created_at")
+  usedAt     DateTime? @map("used_at")
+
+  cliente Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  reserva Reserva? @relation(fields: [reservaId], references: [id], onDelete: SetNull)
+
+  @@map("qr_tokens")
+}
+
+model Historial {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int     @map("usuario_id")
+  tipoEvento   String  @map("tipo_evento")
+  descripcion  String
+  referenciaId String? @map("referencia_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("historial")
+}

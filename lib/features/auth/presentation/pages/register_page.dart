@@ -15,7 +15,9 @@ class RegisterPage extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Nombre completo',
                 prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -23,7 +25,9 @@ class RegisterPage extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Correo',
                 prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -32,14 +36,17 @@ class RegisterPage extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Contraseña',
                 prefixIcon: const Icon(Icons.lock_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
             ),
             const SizedBox(height: 24),
             SizedBox(
               height: 52,
               child: ElevatedButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
+                onPressed: () =>
+                    Navigator.pushReplacementNamed(context, '/home'),
                 child: const Text('Registrarme'),
               ),
             ),

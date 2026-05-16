@@ -4,7 +4,6 @@ import 'package:la_madriguera/features/admin/presentation/pages/admin_dashboard_
 import 'package:la_madriguera/features/auth/presentation/pages/login_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/register_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/role_redirect_page.dart';
-import 'package:la_madriguera/features/clientes/presentation/pages/cliente_home_page.dart';
 import 'package:la_madriguera/features/dashboard/presentation/pages/admin_home_page.dart';
 import 'package:la_madriguera/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
@@ -39,7 +38,7 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const RoleRedirectPage());
 
       case RouteNames.clienteHome:
-        return MaterialPageRoute(builder: (_) => const ClienteHomePage());
+        return MaterialPageRoute(builder: (_) => const HomePage());
 
       case RouteNames.operadorHome:
         return MaterialPageRoute(builder: (_) => const HomePage());
@@ -98,9 +97,8 @@ class AppRouter {
 
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Ruta no encontrada')),
-          ),
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('Ruta no encontrada'))),
         );
     }
   }

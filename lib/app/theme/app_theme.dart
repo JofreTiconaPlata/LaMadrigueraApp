@@ -25,16 +25,12 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
       ),
-      drawerTheme: const DrawerThemeData(
-        backgroundColor: surface,
-      ),
+      drawerTheme: const DrawerThemeData(backgroundColor: surface),
       cardTheme: CardThemeData(
         color: surface,
         elevation: 2,
         shadowColor: Colors.black12,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -71,9 +67,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      iconTheme: const IconThemeData(
-        color: primaryGreen,
-      ),
+      iconTheme: const IconThemeData(color: primaryGreen),
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
           color: textPrimary,
@@ -83,16 +77,9 @@ class AppTheme {
           color: textPrimary,
           fontWeight: FontWeight.bold,
         ),
-        titleLarge: TextStyle(
-          color: textPrimary,
-          fontWeight: FontWeight.w700,
-        ),
-        bodyLarge: TextStyle(
-          color: textPrimary,
-        ),
-        bodyMedium: TextStyle(
-          color: textSecondary,
-        ),
+        titleLarge: TextStyle(color: textPrimary, fontWeight: FontWeight.w700),
+        bodyLarge: TextStyle(color: textPrimary),
+        bodyMedium: TextStyle(color: textSecondary),
       ),
     );
   }

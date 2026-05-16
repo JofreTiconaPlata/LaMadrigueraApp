@@ -50,7 +50,11 @@ class EspaciosPage extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final number = index + 1;
-                  return _spaceButton(context, number, ocupados.contains(number));
+                  return _spaceButton(
+                    context,
+                    number,
+                    ocupados.contains(number),
+                  );
                 },
               ),
             ),

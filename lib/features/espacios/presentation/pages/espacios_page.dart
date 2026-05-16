@@ -14,9 +14,7 @@ class EspaciosPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: ocupado ? Colors.red.shade100 : Colors.green.shade100,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: ocupado ? Colors.red : Colors.green,
-          ),
+          border: Border.all(color: ocupado ? Colors.red : Colors.green),
         ),
         child: Center(
           child: Text(
@@ -37,19 +35,14 @@ class EspaciosPage extends StatelessWidget {
     final ocupados = {2, 5, 9};
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seleccionar espacio'),
-      ),
+      appBar: AppBar(title: const Text('Seleccionar espacio')),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             const Text(
               'Espacios para autos',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             const Text(
