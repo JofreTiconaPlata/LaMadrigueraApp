@@ -14,7 +14,7 @@ import 'package:la_madriguera/shared/providers/session_provider.dart';
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  static final LatLng _centroMapa = LatLng(-17.7833, -63.1821);
+  static final LatLng _centroMapa = LatLng(-17.3935, -66.1570);
 
   Widget _drawerOption(
     BuildContext context,
@@ -66,6 +66,12 @@ class HomePage extends ConsumerWidget {
           Icons.directions_car,
           'Vehículos estacionados',
           RouteNames.vehiculosEstacionados,
+        ),
+        _drawerOption(
+          context,
+          Icons.add_location_alt,
+          'Crear parqueo',
+          RouteNames.crearParqueo,
         ),
         _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
