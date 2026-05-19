@@ -54,12 +54,30 @@ class HomePage extends ConsumerWidget {
 
     if (rol == RolEnum.operador) {
       return [
-        ...commonOptions,
+        _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
+        _drawerOption(
+          context,
+          Icons.add_location_alt,
+          'Crear parqueo',
+          RouteNames.crearParqueo,
+        ),
+        _drawerOption(
+          context,
+          Icons.local_parking,
+          'Disponibilidad de espacios',
+          RouteNames.espacios,
+        ),
         _drawerOption(
           context,
           Icons.login,
           'Registrar ingreso de vehículo',
           RouteNames.registrarIngreso,
+        ),
+        _drawerOption(
+          context,
+          Icons.qr_code_scanner,
+          'Validar QR',
+          RouteNames.qrTiempo,
         ),
         _drawerOption(
           context,
@@ -80,9 +98,15 @@ class HomePage extends ConsumerWidget {
           'Cobro y salida',
           RouteNames.salidasCobros,
         ),
+        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
+        _drawerOption(
+          context,
+          Icons.history,
+          'Historial de operaciones',
+          RouteNames.historial,
+        ),
       ];
     }
-
     if (rol == RolEnum.administrador) {
       return [
         ...commonOptions,
