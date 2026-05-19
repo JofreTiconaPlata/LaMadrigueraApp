@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/core/storage/local_storage_service.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/parqueos/presentation/providers/parqueos_provider.dart';
+import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
+import 'package:la_madriguera/shared/enums/rol_enum.dart';
+import 'package:la_madriguera/shared/providers/session_provider.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  static final LatLng _centroMapa = LatLng(-17.3895, -66.1568);
+  static final LatLng _centroMapa = LatLng(-17.3935, -66.1570);
 
   Widget _drawerOption(
     BuildContext context,
@@ -36,13 +41,93 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  List<Widget> _drawerOptionsByRole(BuildContext context, RolEnum? rol) {
+    final commonOptions = <Widget>[
+      _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
+      _drawerOption(
+        context,
+        Icons.local_parking,
+        'Disponibilidad de espacios',
+        RouteNames.espacios,
+      ),
+      _drawerOption(context, Icons.history, 'Historial', RouteNames.historial),
+    ];
+
+    if (rol == RolEnum.operador) {
+      return [
+        ...commonOptions,
+        _drawerOption(
+          context,
+          Icons.login,
+          'Registrar ingreso de vehículo',
+          RouteNames.registrarIngreso,
+        ),
+        _drawerOption(
+          context,
+          Icons.directions_car,
+          'Vehículos estacionados',
+          RouteNames.vehiculosEstacionados,
+        ),
+        _drawerOption(
+          context,
+          Icons.add_location_alt,
+          'Crear parqueo',
+          RouteNames.crearParqueo,
+        ),
+        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
+        _drawerOption(
+          context,
+          Icons.point_of_sale,
+          'Cobro y salida',
+          RouteNames.salidasCobros,
+        ),
+      ];
+    }
+
+    if (rol == RolEnum.administrador) {
+      return [
+        ...commonOptions,
+        _drawerOption(
+          context,
+          Icons.admin_panel_settings,
+          'Panel administrativo',
+          RouteNames.adminDashboard,
+        ),
+        _drawerOption(
+          context,
+          Icons.add_location_alt,
+          'Crear parqueo',
+          RouteNames.crearParqueo,
+        ),
+        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
+      ];
+    }
+
+    return [
+      ...commonOptions,
+      _drawerOption(context, Icons.qr_code_2, 'Código QR', RouteNames.qrTiempo),
+    ];
+  }
+
+  String _homeTitleByRole(RolEnum? rol) {
+    switch (rol) {
+      case RolEnum.operador:
+        return 'Panel operador';
+      case RolEnum.administrador:
+        return 'Panel administrador';
+      case RolEnum.cliente:
+      case null:
+        return 'Parqueos cercanos';
+    }
+  }
+
   void _mostrarDetalleParqueo(BuildContext context, ParqueoEntity parqueo) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return Padding(
           padding: const EdgeInsets.all(20),
           child: Wrap(
@@ -95,13 +180,28 @@ class HomePage extends StatelessWidget {
               ),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
                     Navigator.pushNamed(context, RouteNames.espacios);
                   },
-                  icon: const Icon(Icons.local_parking),
-                  label: const Text('Ver espacios disponibles'),
+                  icon: const Icon(Icons.visibility),
+                  label: const Text('Ver espacios'),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    Navigator.pushNamed(
+                      context,
+                      RouteNames.crearReserva,
+                      arguments: parqueo,
+                    );
+                  },
+                  icon: const Icon(Icons.timer),
+                  label: const Text('Reservar espacio'),
                 ),
               ),
             ],
@@ -111,104 +211,21 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _mapaParqueos() {
-    return Container(
-      height: 520,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFB7D6B9)),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: FlutterMap(
-        options: MapOptions(
-          initialCenter: _centroMapa,
-          initialZoom: 14,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.programovil.lamadriguera',
-          ),
-          ValueListenableBuilder<List<ParqueoEntity>>(
-            valueListenable: ParqueosProvider.parqueosNotifier,
-            builder: (context, parqueos, _) {
-              if (parqueos.isEmpty) {
-                return MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _centroMapa,
-                      width: 56,
-                      height: 56,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.location_on,
-                          color: Colors.white,
-                          size: 34,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
+  Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    ref.read(sessionProvider.notifier).state = null;
+    await LocalStorageService.clearToken();
 
-              return MarkerLayer(
-                markers: parqueos.map((parqueo) {
-                  return Marker(
-                    point: LatLng(parqueo.latitud, parqueo.longitud),
-                    width: 56,
-                    height: 56,
-                    child: GestureDetector(
-                      onTap: () => _mostrarDetalleParqueo(context, parqueo),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.local_parking,
-                          color: Colors.white,
-                          size: 34,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
+    if (!context.mounted) {
+      return;
+    }
+
+    Navigator.pushReplacementNamed(context, RouteNames.login);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usuario = ref.watch(sessionProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       drawer: Drawer(
@@ -217,20 +234,20 @@ class HomePage extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             children: [
-              const UserAccountsDrawerHeader(
-                decoration: BoxDecoration(color: AppTheme.primaryGreen),
+              UserAccountsDrawerHeader(
+                decoration: const BoxDecoration(color: AppTheme.primaryGreen),
                 accountName: Text(
-                  'Usuario La Madriguera',
-                  style: TextStyle(
+                  usuario?.nombre ?? 'Usuario La Madriguera',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 accountEmail: Text(
-                  'usuario@gmail.com',
-                  style: TextStyle(color: Colors.white70),
+                  usuario?.correo ?? 'usuario@gmail.com',
+                  style: const TextStyle(color: Colors.white70),
                 ),
-                currentAccountPicture: CircleAvatar(
+                currentAccountPicture: const CircleAvatar(
                   backgroundColor: Colors.white,
                   child: Icon(
                     Icons.person,
@@ -239,66 +256,7 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
               ),
-              _drawerOption(
-                context,
-                Icons.person,
-                'Mi perfil',
-                RouteNames.perfil,
-              ),
-              _drawerOption(
-                context,
-                Icons.login,
-                'Registrar ingreso de vehículo',
-                RouteNames.registrarIngreso,
-              ),
-              _drawerOption(
-                context,
-                Icons.directions_car,
-                'Vehículos estacionados',
-                RouteNames.vehiculosEstacionados,
-              ),
-              _drawerOption(
-                context,
-                Icons.local_parking,
-                'Disponibilidad de espacios',
-                RouteNames.espacios,
-              ),
-              _drawerOption(
-                context,
-                Icons.history,
-                'Historial',
-                RouteNames.historial,
-              ),
-              _drawerOption(
-                context,
-                Icons.payments,
-                'Tarifas',
-                RouteNames.tarifas,
-              ),
-              _drawerOption(
-                context,
-                Icons.point_of_sale,
-                'Cobro y salida',
-                RouteNames.salidasCobros,
-              ),
-              _drawerOption(
-                context,
-                Icons.admin_panel_settings,
-                'Panel administrativo',
-                RouteNames.adminDashboard,
-              ),
-              _drawerOption(
-                context,
-                Icons.add_location_alt,
-                'Crear parqueo',
-                RouteNames.crearParqueo,
-              ),
-              _drawerOption(
-                context,
-                Icons.qr_code_2,
-                'Código QR',
-                RouteNames.qrTiempo,
-              ),
+              ..._drawerOptionsByRole(context, usuario?.rol),
               const Divider(height: 24),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.redAccent),
@@ -314,7 +272,7 @@ class HomePage extends StatelessWidget {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.pushReplacementNamed(context, RouteNames.login);
+                  _logout(context, ref);
                 },
               ),
             ],
@@ -322,9 +280,9 @@ class HomePage extends StatelessWidget {
         ),
       ),
       appBar: AppBar(
-        title: const Text(
-          'Parqueos cercanos',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          _homeTitleByRole(usuario?.rol),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           Builder(
@@ -342,7 +300,69 @@ class HomePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _mapaParqueos(),
+          Container(
+            height: 520,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFFB7D6B9)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: FlutterMap(
+              options: MapOptions(initialCenter: _centroMapa, initialZoom: 14),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.programovil.lamadriguera',
+                ),
+                ValueListenableBuilder<List<ParqueoEntity>>(
+                  valueListenable: ParqueosProvider.parqueosNotifier,
+                  builder: (context, parqueos, _) {
+                    return MarkerLayer(
+                      markers: parqueos.map((parqueo) {
+                        return Marker(
+                          point: LatLng(parqueo.latitud, parqueo.longitud),
+                          width: 56,
+                          height: 56,
+                          child: GestureDetector(
+                            onTap: () =>
+                                _mostrarDetalleParqueo(context, parqueo),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryGreen,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.local_parking,
+                                color: Colors.white,
+                                size: 34,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const ReservaActivaCard(),
         ],
       ),
     );

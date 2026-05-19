@@ -13,8 +13,8 @@ class ParqueosProvider {
           espaciosAutos: 12,
           espaciosMotos: 8,
           precioHora: 5,
-          latitud: -17.7833,
-          longitud: -63.1821,
+          latitud: -17.3935,
+          longitud: -66.1570,
         ),
       ]);
 

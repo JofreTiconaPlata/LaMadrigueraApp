@@ -1,18 +1,19 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/login_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/register_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/role_redirect_page.dart';
-import 'package:la_madriguera/features/clientes/presentation/pages/cliente_home_page.dart';
 import 'package:la_madriguera/features/dashboard/presentation/pages/admin_home_page.dart';
 import 'package:la_madriguera/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:la_madriguera/features/historial/presentation/pages/historial_page.dart';
 import 'package:la_madriguera/features/ingresos/presentation/pages/registrar_ingreso_page.dart';
+import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/parqueos/presentation/pages/crear_parqueo_page.dart';
 import 'package:la_madriguera/features/perfil/presentation/pages/perfil_page.dart';
 import 'package:la_madriguera/features/qr/presentation/pages/qr_tiempo_page.dart';
+import 'package:la_madriguera/features/reservas/presentation/pages/crear_reserva_page.dart';
 import 'package:la_madriguera/features/salidas_cobros/presentation/pages/salidas_cobros_page.dart';
 import 'package:la_madriguera/features/tarifas/presentation/pages/tarifas_page.dart';
 import 'package:la_madriguera/features/vehiculos_estacionados/presentation/pages/vehiculos_estacionados_page.dart';
@@ -37,7 +38,7 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const RoleRedirectPage());
 
       case RouteNames.clienteHome:
-        return MaterialPageRoute(builder: (_) => const ClienteHomePage());
+        return MaterialPageRoute(builder: (_) => const HomePage());
 
       case RouteNames.operadorHome:
         return MaterialPageRoute(builder: (_) => const HomePage());
@@ -55,6 +56,7 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => const VehiculosEstacionadosPage(),
         );
+
       case RouteNames.espacios:
         return MaterialPageRoute(builder: (_) => const EspaciosPage());
 
@@ -69,6 +71,23 @@ class AppRouter {
 
       case RouteNames.crearParqueo:
         return MaterialPageRoute(builder: (_) => const CrearParqueoPage());
+
+      case RouteNames.crearReserva:
+        final args = settings.arguments;
+
+        if (args is ParqueoEntity) {
+          return MaterialPageRoute(
+            builder: (_) => CrearReservaPage(parqueo: args),
+          );
+        }
+
+        return MaterialPageRoute(
+          builder: (_) => const Scaffold(
+            body: Center(
+              child: Text('No se recibió el parqueo para reservar.'),
+            ),
+          ),
+        );
 
       case RouteNames.qrTiempo:
         return MaterialPageRoute(builder: (_) => const QrTiempoPage());

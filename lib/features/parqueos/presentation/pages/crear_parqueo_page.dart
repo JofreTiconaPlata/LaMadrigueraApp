@@ -13,7 +13,7 @@ class CrearParqueoPage extends StatefulWidget {
 }
 
 class _CrearParqueoPageState extends State<CrearParqueoPage> {
-  static final LatLng _centroMapa = LatLng(-17.7833, -63.1821);
+  static final LatLng _centroMapa = LatLng(-17.3935, -66.1570);
 
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
