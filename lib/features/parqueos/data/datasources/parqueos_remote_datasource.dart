@@ -29,4 +29,29 @@ class ParqueosRemoteDataSource {
 
     return ParqueoDto.fromJson(data);
   }
+
+  Future<ParqueoDto> createParqueo({
+    required String nombre,
+    required String direccion,
+    required double latitud,
+    required double longitud,
+    required int espaciosAutos,
+    required int espaciosMotos,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.parqueos,
+      data: {
+        'nombre': nombre,
+        'direccion': direccion,
+        'latitud': latitud,
+        'longitud': longitud,
+        'espaciosAutos': espaciosAutos,
+        'espaciosMotos': espaciosMotos,
+      },
+    );
+
+    final data = response.data?['data'] as Map<String, dynamic>;
+
+    return ParqueoDto.fromJson(data);
+  }
 }
