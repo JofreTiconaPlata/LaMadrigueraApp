@@ -75,34 +75,15 @@ class HomePage extends ConsumerWidget {
         ),
         _drawerOption(
           context,
-          Icons.login,
-          'Registrar ingreso de vehículo',
-          RouteNames.registrarIngreso,
-        ),
-        _drawerOption(
-          context,
-          Icons.qr_code_scanner,
-          'Validar QR',
-          RouteNames.qrTiempo,
-        ),
-        _drawerOption(
-          context,
           Icons.directions_car,
-          'Vehículos estacionados',
+          'Ingresos y vehículos estacionados',
           RouteNames.vehiculosEstacionados,
         ),
         _drawerOption(
           context,
-          Icons.add_location_alt,
-          'Crear parqueo',
-          RouteNames.crearParqueo,
-        ),
-        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
-        _drawerOption(
-          context,
-          Icons.point_of_sale,
-          'Cobro y salida',
-          RouteNames.salidasCobros,
+          Icons.qr_code_scanner,
+          'Validar QR / tiempo',
+          RouteNames.qrTiempo,
         ),
         _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
