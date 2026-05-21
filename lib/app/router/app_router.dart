@@ -11,6 +11,7 @@ import 'package:la_madriguera/features/historial/presentation/pages/historial_pa
 import 'package:la_madriguera/features/ingresos/presentation/pages/registrar_ingreso_page.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/parqueos/presentation/pages/crear_parqueo_page.dart';
+import 'package:la_madriguera/features/parqueos/presentation/pages/detalle_parqueo_page.dart';
 import 'package:la_madriguera/features/perfil/presentation/pages/perfil_page.dart';
 import 'package:la_madriguera/features/qr/presentation/pages/qr_tiempo_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/pages/crear_reserva_page.dart';
@@ -71,6 +72,23 @@ class AppRouter {
 
       case RouteNames.crearParqueo:
         return MaterialPageRoute(builder: (_) => const CrearParqueoPage());
+
+      case RouteNames.detalleParqueo:
+        final args = settings.arguments;
+
+        if (args is int) {
+          return MaterialPageRoute(
+            builder: (_) => DetalleParqueoPage(parqueoId: args),
+          );
+        }
+
+        return MaterialPageRoute(
+          builder: (_) => const Scaffold(
+            body: Center(
+              child: Text('No se recibió el parqueo para ver detalle.'),
+            ),
+          ),
+        );
 
       case RouteNames.crearReserva:
         final args = settings.arguments;

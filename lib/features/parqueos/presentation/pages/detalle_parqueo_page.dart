@@ -3,27 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 
-const int parqueoDemoId = 1;
-
-final detalleParqueoProvider = FutureProvider<ParqueoDto>((ref) async {
+final detalleParqueoProvider = FutureProvider.family<ParqueoDto, int>((
+  ref,
+  parqueoId,
+) async {
   final dataSource = ParqueosRemoteDataSource();
 
-  return dataSource.getParqueoById(parqueoDemoId);
+  return dataSource.getParqueoById(parqueoId);
 });
 
 class DetalleParqueoPage extends ConsumerWidget {
-  const DetalleParqueoPage({super.key});
+  const DetalleParqueoPage({required this.parqueoId, super.key});
+
+  final int parqueoId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final parqueoAsync = ref.watch(detalleParqueoProvider);
+    final parqueoAsync = ref.watch(detalleParqueoProvider(parqueoId));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del parqueo'),
         actions: [
           IconButton(
-            onPressed: () => ref.invalidate(detalleParqueoProvider),
+            onPressed: () => ref.invalidate(detalleParqueoProvider(parqueoId)),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -51,7 +54,8 @@ class DetalleParqueoPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(detalleParqueoProvider),
+                  onPressed: () =>
+                      ref.invalidate(detalleParqueoProvider(parqueoId)),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Reintentar'),
                 ),
@@ -86,36 +90,24 @@ class DetalleParqueoPage extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(parqueo.direccion),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  const Icon(Icons.directions_car),
-                  const SizedBox(width: 8),
-                  Text('Espacios para autos: ${parqueo.espaciosAutos}'),
-                ],
+              _InfoRow(
+                icon: Icons.directions_car,
+                text: 'Espacios para autos: ${parqueo.espaciosAutos}',
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.two_wheeler),
-                  const SizedBox(width: 8),
-                  Text('Espacios para motos: ${parqueo.espaciosMotos}'),
-                ],
+              _InfoRow(
+                icon: Icons.two_wheeler,
+                text: 'Espacios para motos: ${parqueo.espaciosMotos}',
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.local_parking),
-                  const SizedBox(width: 8),
-                  Text('Capacidad total: ${parqueo.capacidadTotal}'),
-                ],
+              _InfoRow(
+                icon: Icons.local_parking,
+                text: 'Capacidad total: ${parqueo.capacidadTotal}',
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.info_outline),
-                  const SizedBox(width: 8),
-                  Text('Estado: ${parqueo.estado}'),
-                ],
+              _InfoRow(
+                icon: Icons.info_outline,
+                text: 'Estado: ${parqueo.estado}',
               ),
               const SizedBox(height: 28),
               SizedBox(
@@ -137,6 +129,24 @@ class DetalleParqueoPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text)),
+      ],
     );
   }
 }

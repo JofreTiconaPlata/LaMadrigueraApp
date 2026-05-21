@@ -190,24 +190,17 @@ class HomePage extends ConsumerWidget {
               ),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.pushNamed(context, RouteNames.espacios);
-                  },
-                  icon: const Icon(Icons.visibility),
-                  label: const Text('Ver espacios'),
-                ),
-              ),
-              SizedBox(
-                width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(sheetContext);
-                    Navigator.pushNamed(context, RouteNames.crearReserva);
+                    Navigator.pushNamed(
+                      context,
+                      RouteNames.detalleParqueo,
+                      arguments: parqueo.id,
+                    );
                   },
-                  icon: const Icon(Icons.timer),
-                  label: const Text('Reservar espacio'),
+                  icon: const Icon(Icons.visibility),
+                  label: const Text('Ver detalles'),
                 ),
               ),
             ],
