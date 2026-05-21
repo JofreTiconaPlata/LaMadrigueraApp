@@ -6,6 +6,7 @@ import { parqueosRoutes } from './modules/parqueos/parqueos.routes';
 import { espaciosRoutes } from './modules/espacios/espacios.routes';
 import { tarifasRoutes } from './modules/tarifas/tarifas.routes';
 import { vehiculosRoutes } from './modules/vehiculos/vehiculos.routes';
+import { ingresosRoutes } from './modules/ingresos/ingresos.routes';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/parqueos', parqueosRoutes);
 app.use('/api/espacios', espaciosRoutes);
 app.use('/api/tarifas', tarifasRoutes);
 app.use('/api/vehiculos', vehiculosRoutes);
+app.use('/api/ingresos', ingresosRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({
