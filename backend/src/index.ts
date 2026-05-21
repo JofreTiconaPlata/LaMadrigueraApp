@@ -3,6 +3,7 @@ import cors from 'cors';
 import { env } from './config/env';
 import { authRoutes } from './modules/auth/auth.routes';
 import { parqueosRoutes } from './modules/parqueos/parqueos.routes';
+import { espaciosRoutes } from './modules/espacios/espacios.routes';
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/parqueos', parqueosRoutes);
+app.use('/api/espacios', espaciosRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({
