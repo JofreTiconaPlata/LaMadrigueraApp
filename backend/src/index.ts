@@ -5,6 +5,7 @@ import { authRoutes } from './modules/auth/auth.routes';
 import { parqueosRoutes } from './modules/parqueos/parqueos.routes';
 import { espaciosRoutes } from './modules/espacios/espacios.routes';
 import { tarifasRoutes } from './modules/tarifas/tarifas.routes';
+import { vehiculosRoutes } from './modules/vehiculos/vehiculos.routes';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/parqueos', parqueosRoutes);
 app.use('/api/espacios', espaciosRoutes);
 app.use('/api/tarifas', tarifasRoutes);
+app.use('/api/vehiculos', vehiculosRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({
