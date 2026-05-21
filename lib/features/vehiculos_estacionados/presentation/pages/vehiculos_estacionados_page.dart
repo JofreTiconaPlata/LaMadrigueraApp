@@ -112,6 +112,11 @@ class VehiculosEstacionadosPage extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: ListTile(
+                    onTap: () => Navigator.pushNamed(
+                      context,
+                      '/salidas-cobros',
+                      arguments: ingreso.id,
+                    ),
                     leading: CircleAvatar(
                       backgroundColor: const Color(0xFFE8F5E9),
                       child: Icon(
