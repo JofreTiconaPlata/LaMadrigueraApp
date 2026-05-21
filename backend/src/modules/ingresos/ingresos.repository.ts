@@ -168,6 +168,21 @@ export const createIngresoRepository = (
         espacioId: input.espacioId,
         vehiculoId: input.vehiculoId,
         operadorId
+      }
+    });
+
+    await tx.espacio.update({
+      where: {
+        id: input.espacioId
+      },
+      data: {
+        estado: 'OCUPADO'
+      }
+    });
+
+    const ingresoDetalle = await tx.ingreso.findUnique({
+      where: {
+        id: ingreso.id
       },
       include: {
         parqueo: {
@@ -206,16 +221,11 @@ export const createIngresoRepository = (
       }
     });
 
-    await tx.espacio.update({
-      where: {
-        id: input.espacioId
-      },
-      data: {
-        estado: 'OCUPADO'
-      }
-    });
+    if (!ingresoDetalle) {
+      throw new Error('INGRESO_NOT_FOUND');
+    }
 
-    return ingreso;
+    return ingresoDetalle;
   });
 };
 
