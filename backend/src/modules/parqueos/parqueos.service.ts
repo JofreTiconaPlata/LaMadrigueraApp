@@ -1,5 +1,6 @@
-import { ParqueoResponse } from './parqueos.types';
+import { CreateParqueoInput, ParqueoResponse } from './parqueos.types';
 import {
+  createParqueoRepository,
   findParqueoByIdRepository,
   findParqueosActivosRepository
 } from './parqueos.repository';
@@ -36,12 +37,22 @@ export const getParqueosService = async (): Promise<ParqueoResponse[]> => {
   return parqueos.map(toParqueoResponse);
 };
 
-export const getParqueoByIdService = async (id: number): Promise<ParqueoResponse> => {
+export const getParqueoByIdService = async (
+  id: number
+): Promise<ParqueoResponse> => {
   const parqueo = await findParqueoByIdRepository(id);
 
   if (!parqueo) {
     throw new Error('PARQUEO_NOT_FOUND');
   }
+
+  return toParqueoResponse(parqueo);
+};
+
+export const createParqueoService = async (
+  input: CreateParqueoInput
+): Promise<ParqueoResponse> => {
+  const parqueo = await createParqueoRepository(input);
 
   return toParqueoResponse(parqueo);
 };
