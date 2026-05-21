@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
-import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
-import 'package:la_madriguera/features/parqueos/presentation/providers/parqueos_provider.dart';
+import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 
 class CrearParqueoPage extends StatefulWidget {
   const CrearParqueoPage({super.key});
@@ -23,6 +22,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
   final _precioController = TextEditingController();
 
   LatLng? _ubicacionSeleccionada;
+  bool _guardando = false;
 
   @override
   void dispose() {
@@ -34,7 +34,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
     super.dispose();
   }
 
-  void _guardarParqueo() {
+  Future<void> _guardarParqueo() async {
     final formularioValido = _formKey.currentState?.validate() ?? false;
 
     if (!formularioValido) {
@@ -48,24 +48,42 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
       return;
     }
 
-    final parqueo = ParqueoEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      nombre: _nombreController.text.trim(),
-      direccion: _direccionController.text.trim(),
-      espaciosAutos: int.parse(_autosController.text.trim()),
-      espaciosMotos: int.parse(_motosController.text.trim()),
-      precioHora: double.parse(_precioController.text.trim()),
-      latitud: _ubicacionSeleccionada!.latitude,
-      longitud: _ubicacionSeleccionada!.longitude,
-    );
+    setState(() {
+      _guardando = true;
+    });
 
-    ParqueosProvider.agregarParqueo(parqueo);
+    try {
+      final dataSource = ParqueosRemoteDataSource();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Parqueo registrado correctamente.')),
-    );
+      await dataSource.createParqueo(
+        nombre: _nombreController.text.trim(),
+        direccion: _direccionController.text.trim(),
+        latitud: _ubicacionSeleccionada!.latitude,
+        longitud: _ubicacionSeleccionada!.longitude,
+        espaciosAutos: int.parse(_autosController.text.trim()),
+        espaciosMotos: int.parse(_motosController.text.trim()),
+      );
 
-    Navigator.pop(context);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Parqueo registrado correctamente.')),
+      );
+
+      Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo registrar el parqueo: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _guardando = false;
+        });
+      }
+    }
   }
 
   String? _validarTexto(String? value, String campo) {
@@ -112,6 +130,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
   }) {
     return TextFormField(
       controller: controller,
+      enabled: !_guardando,
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
@@ -150,11 +169,13 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
             options: MapOptions(
               initialCenter: _ubicacionSeleccionada ?? _centroMapa,
               initialZoom: 14,
-              onTap: (_, point) {
-                setState(() {
-                  _ubicacionSeleccionada = point;
-                });
-              },
+              onTap: _guardando
+                  ? null
+                  : (_, point) {
+                      setState(() {
+                        _ubicacionSeleccionada = point;
+                      });
+                    },
             ),
             children: [
               TileLayer(
@@ -244,7 +265,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
             const SizedBox(height: 16),
             _campoTexto(
               controller: _precioController,
-              label: 'Precio por hora',
+              label: 'Precio por hora referencial',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -256,9 +277,15 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
             SizedBox(
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: _guardarParqueo,
-                icon: const Icon(Icons.save),
-                label: const Text('Guardar parqueo'),
+                onPressed: _guardando ? null : _guardarParqueo,
+                icon: _guardando
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save),
+                label: Text(_guardando ? 'Guardando...' : 'Guardar parqueo'),
               ),
             ),
           ],

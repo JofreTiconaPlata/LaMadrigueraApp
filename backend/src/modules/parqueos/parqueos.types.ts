@@ -11,3 +11,12 @@ export interface ParqueoResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface CreateParqueoInput {
+  nombre: string;
+  direccion: string;
+  latitud: number;
+  longitud: number;
+  espaciosAutos: number;
+  espaciosMotos: number;
+}
