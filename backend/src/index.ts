@@ -4,6 +4,7 @@ import { env } from './config/env';
 import { authRoutes } from './modules/auth/auth.routes';
 import { parqueosRoutes } from './modules/parqueos/parqueos.routes';
 import { espaciosRoutes } from './modules/espacios/espacios.routes';
+import { tarifasRoutes } from './modules/tarifas/tarifas.routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/parqueos', parqueosRoutes);
 app.use('/api/espacios', espaciosRoutes);
+app.use('/api/tarifas', tarifasRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({
