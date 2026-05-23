@@ -5,11 +5,17 @@ import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
-import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
-import 'package:la_madriguera/features/parqueos/presentation/providers/parqueos_provider.dart';
+import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
+import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
+
+final parqueosDashboardProvider = FutureProvider<List<ParqueoDto>>((ref) async {
+  final dataSource = ParqueosRemoteDataSource();
+
+  return dataSource.getParqueos();
+});
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -144,7 +150,7 @@ class HomePage extends ConsumerWidget {
     }
   }
 
-  void _mostrarDetalleParqueo(BuildContext context, ParqueoEntity parqueo) {
+  void _mostrarDetalleParqueo(BuildContext context, ParqueoDto parqueo) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -185,12 +191,12 @@ class HomePage extends ConsumerWidget {
                 style: const TextStyle(color: AppTheme.textSecondary),
               ),
               Text(
-                'Espacios: ${parqueo.espaciosTotales} '
+                'Espacios: ${parqueo.capacidadTotal} '
                 '(${parqueo.espaciosAutos} autos, ${parqueo.espaciosMotos} motos)',
                 style: const TextStyle(color: AppTheme.textPrimary),
               ),
               Text(
-                'Precio por hora: ${parqueo.precioHora.toStringAsFixed(2)} Bs',
+                'Estado: ${parqueo.estado}',
                 style: const TextStyle(color: AppTheme.textPrimary),
               ),
               Text(
@@ -217,11 +223,7 @@ class HomePage extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(sheetContext);
-                    Navigator.pushNamed(
-                      context,
-                      RouteNames.crearReserva,
-                      arguments: parqueo,
-                    );
+                    Navigator.pushNamed(context, RouteNames.crearReserva);
                   },
                   icon: const Icon(Icons.timer),
                   label: const Text('Reservar espacio'),
@@ -345,39 +347,46 @@ class HomePage extends ConsumerWidget {
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.programovil.lamadriguera',
                 ),
-                ValueListenableBuilder<List<ParqueoEntity>>(
-                  valueListenable: ParqueosProvider.parqueosNotifier,
-                  builder: (context, parqueos, _) {
-                    return MarkerLayer(
-                      markers: parqueos.map((parqueo) {
-                        return Marker(
-                          point: LatLng(parqueo.latitud, parqueo.longitud),
-                          width: 56,
-                          height: 56,
-                          child: GestureDetector(
-                            onTap: () =>
-                                _mostrarDetalleParqueo(context, parqueo),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryGreen,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 6,
-                                    offset: Offset(0, 3),
+                Consumer(
+                  builder: (context, ref, _) {
+                    final parqueosAsync = ref.watch(parqueosDashboardProvider);
+
+                    return parqueosAsync.when(
+                      loading: () => const MarkerLayer(markers: []),
+                      error: (_, _) => const MarkerLayer(markers: []),
+                      data: (parqueos) {
+                        return MarkerLayer(
+                          markers: parqueos.map((parqueo) {
+                            return Marker(
+                              point: LatLng(parqueo.latitud, parqueo.longitud),
+                              width: 56,
+                              height: 56,
+                              child: GestureDetector(
+                                onTap: () =>
+                                    _mostrarDetalleParqueo(context, parqueo),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryGreen,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 6,
+                                        offset: Offset(0, 3),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                  child: const Icon(
+                                    Icons.local_parking,
+                                    color: Colors.white,
+                                    size: 34,
+                                  ),
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.local_parking,
-                                color: Colors.white,
-                                size: 34,
-                              ),
-                            ),
-                          ),
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
+                      },
                     );
                   },
                 ),

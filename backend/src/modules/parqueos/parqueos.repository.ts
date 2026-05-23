@@ -1,4 +1,5 @@
 import { prisma } from '../../config/prisma';
+import { CreateParqueoInput } from './parqueos.types';
 
 export const findParqueosActivosRepository = () => {
   return prisma.parqueo.findMany({
@@ -15,6 +16,21 @@ export const findParqueoByIdRepository = (id: number) => {
   return prisma.parqueo.findUnique({
     where: {
       id
+    }
+  });
+};
+
+export const createParqueoRepository = (input: CreateParqueoInput) => {
+  return prisma.parqueo.create({
+    data: {
+      nombre: input.nombre,
+      direccion: input.direccion,
+      latitud: input.latitud,
+      longitud: input.longitud,
+      espaciosAutos: input.espaciosAutos,
+      espaciosMotos: input.espaciosMotos,
+      capacidadTotal: input.espaciosAutos + input.espaciosMotos,
+      estado: 'ACTIVO'
     }
   });
 };
