@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote_datasource.dart';
@@ -92,7 +93,7 @@ class QrTiempoPage extends ConsumerWidget {
                     const Icon(
                       Icons.qr_code_2,
                       size: 80,
-                      color: Color(0xFF2E7D32),
+                      color: AppTheme.primary,
                     ),
                     const SizedBox(height: 16),
                     const Text(

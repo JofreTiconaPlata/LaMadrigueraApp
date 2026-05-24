@@ -149,7 +149,7 @@ class _RegistrarIngresoPageState extends ConsumerState<RegistrarIngresoPage> {
                         value: vehiculo.id,
                         child: Text(
                           '${vehiculo.placa} - ${vehiculo.tipo}'
-                          '${vehiculo.marca == null ? '' : ' • ${vehiculo.marca}'}',
+                          '${vehiculo.marca == null ? '' : ' � ${vehiculo.marca}'}',
                         ),
                       );
                     }).toList(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/espacios/data/datasources/espacios_remote_datasource.dart';
 import 'package:la_madriguera/features/espacios/data/models/espacio_dto.dart';
@@ -16,7 +17,7 @@ class EspaciosPage extends ConsumerWidget {
 
   Color _backgroundColor(EspacioDto espacio) {
     return switch (espacio.estado) {
-      'DISPONIBLE' => Colors.green.shade100,
+      'DISPONIBLE' => AppTheme.primary.withValues(alpha: 0.12),
       'OCUPADO' => Colors.red.shade100,
       'RESERVADO' => Colors.orange.shade100,
       'MANTENIMIENTO' => Colors.grey.shade300,
@@ -26,7 +27,7 @@ class EspaciosPage extends ConsumerWidget {
 
   Color _borderColor(EspacioDto espacio) {
     return switch (espacio.estado) {
-      'DISPONIBLE' => Colors.green,
+      'DISPONIBLE' => AppTheme.primary,
       'OCUPADO' => Colors.red,
       'RESERVADO' => Colors.orange,
       'MANTENIMIENTO' => Colors.grey,
@@ -36,7 +37,7 @@ class EspaciosPage extends ConsumerWidget {
 
   Color _textColor(EspacioDto espacio) {
     return switch (espacio.estado) {
-      'DISPONIBLE' => Colors.green.shade800,
+      'DISPONIBLE' => AppTheme.primary,
       'OCUPADO' => Colors.red,
       'RESERVADO' => Colors.orange.shade800,
       'MANTENIMIENTO' => Colors.grey.shade800,
@@ -106,7 +107,7 @@ class EspaciosPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 children: const [
                   SizedBox(height: 120),
-                  Icon(Icons.local_parking, size: 72, color: Color(0xFF2E7D32)),
+                  Icon(Icons.local_parking, size: 72, color: AppTheme.primary),
                   SizedBox(height: 16),
                   Text(
                     'No hay espacios registrados',
@@ -136,7 +137,7 @@ class EspaciosPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Disponibles: $disponibles • Ocupados: $ocupados • Total: ${espacios.length}',
+                  'Disponibles: $disponibles � Ocupados: $ocupados � Total: ${espacios.length}',
                   style: const TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),

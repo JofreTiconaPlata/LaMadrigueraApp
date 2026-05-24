@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/salidas_cobros/data/datasources/salidas_cobros_remote_datasource.dart';
 import 'package:la_madriguera/features/salidas_cobros/data/models/salida_cobro_dto.dart';
@@ -83,7 +84,7 @@ class HistorialPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 children: const [
                   SizedBox(height: 120),
-                  Icon(Icons.history, size: 72, color: Color(0xFF2E7D32)),
+                  Icon(Icons.history, size: 72, color: AppTheme.primary),
                   SizedBox(height: 16),
                   Text(
                     'No hay operaciones registradas',

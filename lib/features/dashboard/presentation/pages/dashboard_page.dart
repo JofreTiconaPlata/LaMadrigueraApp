@@ -44,7 +44,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     String route,
   ) {
     return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryGreen),
+      leading: Icon(icon, color: AppTheme.primary),
       title: Text(
         title,
         style: const TextStyle(
@@ -176,7 +176,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen,
+                      color: AppTheme.primary,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.local_parking, color: Colors.white),
@@ -321,7 +321,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             children: [
               UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(color: AppTheme.primaryGreen),
+                decoration: const BoxDecoration(color: AppTheme.primaryDark),
                 accountName: Text(
                   usuario?.nombre ?? 'Usuario La Madriguera',
                   style: const TextStyle(
@@ -335,11 +335,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 currentAccountPicture: const CircleAvatar(
                   backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.person,
-                    size: 42,
-                    color: AppTheme.primaryGreen,
-                  ),
+                  child: Icon(Icons.person, size: 42, color: AppTheme.primary),
                 ),
               ),
               ..._drawerOptionsByRole(context, usuario?.rol),
@@ -445,7 +441,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     ),
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: AppTheme.primaryGreen,
+                                        color: AppTheme.primary,
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: const [
                                           BoxShadow(
@@ -528,7 +524,7 @@ class _DashboardBottomNavigation extends StatelessWidget {
         },
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppTheme.primaryGreen,
+            color: AppTheme.primary,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -598,7 +594,7 @@ class _DashboardBottomNavigationItem extends StatelessWidget {
                 scale: isSelected ? 1.06 : 1,
                 child: Icon(
                   item.icon,
-                  color: isSelected ? AppTheme.primaryGreen : Colors.white,
+                  color: isSelected ? AppTheme.primary : Colors.white,
                   size: 23,
                 ),
               ),
@@ -608,7 +604,7 @@ class _DashboardBottomNavigationItem extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: isSelected ? AppTheme.primaryGreen : Colors.white,
+                  color: isSelected ? AppTheme.primary : Colors.white,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 ),
@@ -906,7 +902,7 @@ class _DashboardOverlayPanelState
                       value: vehiculo.id,
                       child: Text(
                         '${vehiculo.placa} - ${vehiculo.tipo}'
-                        '${vehiculo.marca == null ? '' : ' • ${vehiculo.marca}'}',
+                        '${vehiculo.marca == null ? '' : ' � ${vehiculo.marca}'}',
                       ),
                     );
                   }).toList(),
@@ -1101,7 +1097,7 @@ class _DashboardOverlayPanelState
                                   width: 48,
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen,
+                                    color: AppTheme.primary,
                                     borderRadius: BorderRadius.circular(14),
                                   ),
                                   child: Icon(
@@ -1208,14 +1204,10 @@ class _OverlayInfoTile extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryGreen.withValues(alpha: 0.10),
+                    color: AppTheme.primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    info.icon,
-                    color: AppTheme.primaryGreen,
-                    size: 22,
-                  ),
+                  child: Icon(info.icon, color: AppTheme.primary, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1245,7 +1237,7 @@ class _OverlayInfoTile extends StatelessWidget {
                 if (clickable)
                   const Icon(
                     Icons.chevron_right_rounded,
-                    color: AppTheme.primaryGreen,
+                    color: AppTheme.primary,
                   ),
               ],
             ),

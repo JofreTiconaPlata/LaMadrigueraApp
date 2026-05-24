@@ -191,7 +191,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
                       height: 56,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen,
+                          color: AppTheme.primary,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: const [
                             BoxShadow(

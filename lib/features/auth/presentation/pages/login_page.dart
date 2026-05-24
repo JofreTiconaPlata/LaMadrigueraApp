@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/features/auth/presentation/providers/login_provider.dart';
@@ -61,7 +62,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const Icon(
                       Icons.local_parking,
                       size: 90,
-                      color: Color(0xFF2E7D32),
+                      color: AppTheme.primary,
                     ),
                     const SizedBox(height: 12),
                     const Text(

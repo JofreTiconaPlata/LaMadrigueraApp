@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
@@ -16,7 +17,7 @@ class PerfilPage extends ConsumerWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF2E7D32)),
+        leading: Icon(icon, color: AppTheme.primary),
         title: Text(title),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
@@ -92,7 +93,7 @@ class PerfilPage extends ConsumerWidget {
           children: [
             const CircleAvatar(
               radius: 45,
-              backgroundColor: Color(0xFF2E7D32),
+              backgroundColor: AppTheme.primary,
               child: Icon(Icons.person, color: Colors.white, size: 50),
             ),
             const SizedBox(height: 12),
@@ -112,7 +113,7 @@ class PerfilPage extends ConsumerWidget {
               usuario?.rol == RolEnum.operador ? 'Operador' : 'Cliente',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFF2E7D32),
+                color: AppTheme.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),

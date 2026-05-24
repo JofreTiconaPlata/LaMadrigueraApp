@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
@@ -72,7 +73,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                 child: const Icon(
                   Icons.local_parking,
                   size: 100,
-                  color: Color(0xFF2E7D32),
+                  color: AppTheme.primary,
                 ),
               ),
               const SizedBox(height: 20),
