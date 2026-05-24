@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
+import 'package:la_madriguera/features/dashboard/presentation/config/map_city_presets.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
@@ -21,7 +22,8 @@ final parqueosDashboardProvider = FutureProvider<List<ParqueoDto>>((ref) async {
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  static final LatLng _centroMapa = LatLng(-17.3935, -66.1570);
+  static final LatLng _centroMapa = MapCityPresets.defaultCity.center;
+  static final double _zoomMapa = MapCityPresets.defaultCity.zoom;
 
   Widget _drawerOption(
     BuildContext context,
@@ -339,7 +341,10 @@ class HomePage extends ConsumerWidget {
             ),
             clipBehavior: Clip.antiAlias,
             child: FlutterMap(
-              options: MapOptions(initialCenter: _centroMapa, initialZoom: 14),
+              options: MapOptions(
+                initialCenter: _centroMapa,
+                initialZoom: _zoomMapa,
+              ),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
