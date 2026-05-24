@@ -8,6 +8,9 @@ import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
 import 'package:la_madriguera/features/dashboard/presentation/config/map_city_presets.dart';
+import 'package:la_madriguera/features/ingresos/presentation/pages/registrar_ingreso_page.dart'
+    show espaciosIngresoProvider, parqueoDemoId, vehiculosIngresoProvider;
+import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
@@ -618,7 +621,7 @@ class _DashboardBottomNavigationItem extends StatelessWidget {
   }
 }
 
-class _DashboardOverlayPanel extends StatelessWidget {
+class _DashboardOverlayPanel extends ConsumerStatefulWidget {
   const _DashboardOverlayPanel({
     required this.item,
     required this.visible,
@@ -631,8 +634,36 @@ class _DashboardOverlayPanel extends StatelessWidget {
   final VoidCallback onClose;
   final ValueChanged<String> onOpenRoute;
 
+  @override
+  ConsumerState<_DashboardOverlayPanel> createState() =>
+      _DashboardOverlayPanelState();
+}
+
+class _DashboardOverlayPanelState
+    extends ConsumerState<_DashboardOverlayPanel> {
+  String? _selectedAction;
+  int? _vehiculoId;
+  int? _espacioId;
+  bool _registrandoIngreso = false;
+
+  @override
+  void didUpdateWidget(covariant _DashboardOverlayPanel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.item.label != widget.item.label || !widget.visible) {
+      _selectedAction = null;
+      _vehiculoId = null;
+      _espacioId = null;
+      _registrandoIngreso = false;
+    }
+  }
+
   String get _title {
-    switch (item.label) {
+    if (_selectedAction != null) {
+      return _selectedAction!;
+    }
+
+    switch (widget.item.label) {
       case 'Reservas':
         return 'Mis reservas';
       case 'QR':
@@ -644,12 +675,16 @@ class _DashboardOverlayPanel extends StatelessWidget {
       case 'Cobros':
         return 'Cobro y salida';
       default:
-        return item.label;
+        return widget.item.label;
     }
   }
 
   String get _description {
-    switch (item.label) {
+    if (_selectedAction == 'Nuevo ingreso') {
+      return 'Selecciona un vehículo registrado y asígnale un espacio disponible sin salir del mapa.';
+    }
+
+    switch (widget.item.label) {
       case 'Reservas':
         return 'Consulta tu reserva activa, revisa el parqueo seleccionado y continúa el flujo sin salir del mapa.';
       case 'QR':
@@ -666,7 +701,7 @@ class _DashboardOverlayPanel extends StatelessWidget {
   }
 
   List<_OverlayInfoItem> get _infoItems {
-    switch (item.label) {
+    switch (widget.item.label) {
       case 'Reservas':
         return const [
           _OverlayInfoItem(
@@ -718,7 +753,7 @@ class _DashboardOverlayPanel extends StatelessWidget {
             icon: Icons.login_rounded,
             title: 'Nuevo ingreso',
             subtitle:
-                'Registra placa, tipo de vehículo y datos necesarios para iniciar el estacionamiento.',
+                'Registra vehículo, espacio disponible y hora de ingreso.',
           ),
           _OverlayInfoItem(
             icon: Icons.directions_car_rounded,
@@ -753,35 +788,258 @@ class _DashboardOverlayPanel extends StatelessWidget {
   }
 
   String get _primaryActionLabel {
-    switch (item.label) {
+    switch (widget.item.label) {
       case 'QR':
         return 'Abrir módulo QR';
       case 'Perfil':
         return 'Ver perfil';
-      case 'Ingresos':
-        return 'Registrar ingreso';
       case 'Cobros':
         return 'Ir a cobros';
       default:
-        return 'Abrir ${item.label}';
+        return 'Abrir ${widget.item.label}';
     }
+  }
+
+  Future<void> _registrarIngresoInline() async {
+    if (_vehiculoId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un vehículo registrado')),
+      );
+      return;
+    }
+
+    if (_espacioId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un espacio disponible')),
+      );
+      return;
+    }
+
+    setState(() {
+      _registrandoIngreso = true;
+    });
+
+    try {
+      final dataSource = IngresosRemoteDataSource();
+
+      await dataSource.registrarIngreso(
+        parqueoId: parqueoDemoId,
+        espacioId: _espacioId!,
+        vehiculoId: _vehiculoId!,
+      );
+
+      ref.invalidate(espaciosIngresoProvider);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingreso registrado correctamente')),
+      );
+
+      setState(() {
+        _vehiculoId = null;
+        _espacioId = null;
+        _selectedAction = null;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo registrar el ingreso: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _registrandoIngreso = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildIngresoInlineForm() {
+    final vehiculosAsync = ref.watch(vehiculosIngresoProvider);
+    final espaciosAsync = ref.watch(espaciosIngresoProvider);
+
+    return vehiculosAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => _OverlayErrorBox(
+        message: 'No se pudieron cargar los vehículos.',
+        error: error,
+        onRetry: () => ref.invalidate(vehiculosIngresoProvider),
+      ),
+      data: (vehiculos) {
+        return espaciosAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (error, _) => _OverlayErrorBox(
+            message: 'No se pudieron cargar los espacios.',
+            error: error,
+            onRetry: () => ref.invalidate(espaciosIngresoProvider),
+          ),
+          data: (espacios) {
+            final espaciosDisponibles = espacios
+                .where((espacio) => espacio.estaDisponible)
+                .toList();
+
+            return Column(
+              children: [
+                DropdownButtonFormField<int>(
+                  initialValue: _vehiculoId,
+                  decoration: InputDecoration(
+                    labelText: 'Vehículo',
+                    prefixIcon: const Icon(Icons.directions_car),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  items: vehiculos.map((vehiculo) {
+                    return DropdownMenuItem<int>(
+                      value: vehiculo.id,
+                      child: Text(
+                        '${vehiculo.placa} - ${vehiculo.tipo}'
+                        '${vehiculo.marca == null ? '' : ' • ${vehiculo.marca}'}',
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: _registrandoIngreso
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _vehiculoId = value;
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  initialValue: _espacioId,
+                  decoration: InputDecoration(
+                    labelText: 'Espacio disponible',
+                    prefixIcon: const Icon(Icons.local_parking),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  items: espaciosDisponibles.map((espacio) {
+                    return DropdownMenuItem<int>(
+                      value: espacio.id,
+                      child: Text('${espacio.codigo} - ${espacio.tipo}'),
+                    );
+                  }).toList(),
+                  onChanged: _registrandoIngreso
+                      ? null
+                      : (value) {
+                          setState(() {
+                            _espacioId = value;
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  enabled: false,
+                  controller: TextEditingController(text: 'Ahora'),
+                  decoration: InputDecoration(
+                    labelText: 'Hora de ingreso',
+                    prefixIcon: const Icon(Icons.access_time),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    onPressed: _registrandoIngreso
+                        ? null
+                        : _registrarIngresoInline,
+                    icon: _registrandoIngreso
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check_circle_outline),
+                    label: Text(
+                      _registrandoIngreso
+                          ? 'Registrando...'
+                          : 'Registrar ingreso',
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPanelContent() {
+    if (widget.item.label == 'Ingresos' && _selectedAction == 'Nuevo ingreso') {
+      return _buildIngresoInlineForm();
+    }
+
+    return Column(
+      children: [
+        ..._infoItems.map(
+          (info) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _OverlayInfoTile(
+              info: info,
+              onTap: widget.item.label == 'Ingresos'
+                  ? () {
+                      setState(() {
+                        _selectedAction = info.title;
+                      });
+                    }
+                  : null,
+            ),
+          ),
+        ),
+        if (widget.item.label == 'Reservas') ...[
+          const SizedBox(height: 4),
+          const ReservaActivaCard(),
+        ],
+        if (widget.item.route != null && widget.item.label != 'Ingresos') ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => widget.onOpenRoute(widget.item.route!),
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: Text(_primaryActionLabel),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-      ignoring: !visible,
+      ignoring: !widget.visible,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 240),
         curve: Curves.easeOutCubic,
-        opacity: visible ? 1 : 0,
+        opacity: widget.visible ? 1 : 0,
         child: Stack(
           children: [
             Positioned.fill(
               child: BackdropFilter(
                 filter: ImageFilter.blur(
-                  sigmaX: visible ? 7 : 0,
-                  sigmaY: visible ? 7 : 0,
+                  sigmaX: widget.visible ? 7 : 0,
+                  sigmaY: widget.visible ? 7 : 0,
                 ),
                 child: Container(color: Colors.black.withValues(alpha: 0.10)),
               ),
@@ -793,11 +1051,11 @@ class _DashboardOverlayPanel extends StatelessWidget {
               child: AnimatedSlide(
                 duration: const Duration(milliseconds: 320),
                 curve: Curves.easeOutCubic,
-                offset: visible ? Offset.zero : const Offset(0, 0.08),
+                offset: widget.visible ? Offset.zero : const Offset(0, 0.08),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(
-                    minHeight: 280,
-                    maxHeight: 420,
+                    minHeight: 300,
+                    maxHeight: 500,
                   ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
@@ -828,16 +1086,31 @@ class _DashboardOverlayPanel extends StatelessWidget {
                           const SizedBox(height: 14),
                           Row(
                             children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primaryGreen,
-                                  borderRadius: BorderRadius.circular(14),
+                              if (_selectedAction != null) ...[
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _selectedAction = null;
+                                    });
+                                  },
+                                  icon: const Icon(Icons.arrow_back_rounded),
                                 ),
-                                child: Icon(item.icon, color: Colors.white),
-                              ),
-                              const SizedBox(width: 12),
+                                const SizedBox(width: 4),
+                              ] else ...[
+                                Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryGreen,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    widget.item.icon,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                              ],
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -863,33 +1136,23 @@ class _DashboardOverlayPanel extends StatelessWidget {
                                 ),
                               ),
                               IconButton(
-                                onPressed: onClose,
+                                onPressed: widget.onClose,
                                 icon: const Icon(Icons.close_rounded),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          ..._infoItems.map(
-                            (info) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _OverlayInfoTile(info: info),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 240),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            child: KeyedSubtree(
+                              key: ValueKey(
+                                '${widget.item.label}-${_selectedAction ?? 'menu'}',
+                              ),
+                              child: _buildPanelContent(),
                             ),
                           ),
-                          if (item.label == 'Reservas') ...[
-                            const SizedBox(height: 4),
-                            const ReservaActivaCard(),
-                          ],
-                          if (item.route != null) ...[
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: () => onOpenRoute(item.route!),
-                                icon: const Icon(Icons.arrow_forward_rounded),
-                                label: Text(_primaryActionLabel),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -917,55 +1180,126 @@ class _OverlayInfoItem {
 }
 
 class _OverlayInfoTile extends StatelessWidget {
-  const _OverlayInfoTile({required this.info});
+  const _OverlayInfoTile({required this.info, this.onTap});
 
   final _OverlayInfoItem info;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final clickable = onTap != null;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F8F4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE0EEE2)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    info.icon,
+                    color: AppTheme.primaryGreen,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        info.title,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        info.subtitle,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12.5,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (clickable)
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppTheme.primaryGreen,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayErrorBox extends StatelessWidget {
+  const _OverlayErrorBox({
+    required this.message,
+    required this.error,
+    required this.onRetry,
+  });
+
+  final String message;
+  final Object error;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F8F4),
+        color: const Color(0xFFFFF5F5),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE0EEE2)),
+        border: Border.all(color: const Color(0xFFFFCDD2)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+        padding: const EdgeInsets.all(14),
+        child: Column(
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(info.icon, color: AppTheme.primaryGreen, size: 22),
+            const Icon(Icons.cloud_off, color: Colors.redAccent, size: 34),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    info.title,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13.5,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    info.subtitle,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 12.5,
-                      height: 1.25,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 6),
+            Text(
+              '$error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 12,
               ),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Reintentar'),
             ),
           ],
         ),
