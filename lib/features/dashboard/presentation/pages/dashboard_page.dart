@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -305,6 +307,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
     final usuario = ref.watch(sessionProvider);
+    final bottomItems = _bottomItemsByRole(usuario?.rol);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -379,85 +382,106 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       bottomNavigationBar: _DashboardBottomNavigation(
         selectedIndex: _selectedBottomIndex,
-        items: _bottomItemsByRole(usuario?.rol),
+        items: bottomItems,
         onItemTap: _onBottomItemTap,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      body: Stack(
         children: [
-          Container(
-            height: 520,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFB7D6B9)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+          ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            children: [
+              Container(
+                height: 520,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0xFFB7D6B9)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: _centroMapa,
-                initialZoom: _zoomMapa,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.programovil.lamadriguera',
-                ),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final parqueosAsync = ref.watch(parqueosDashboardProvider);
+                clipBehavior: Clip.antiAlias,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: _centroMapa,
+                    initialZoom: _zoomMapa,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.programovil.lamadriguera',
+                    ),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final parqueosAsync = ref.watch(
+                          parqueosDashboardProvider,
+                        );
 
-                    return parqueosAsync.when(
-                      loading: () => const MarkerLayer(markers: []),
-                      error: (_, _) => const MarkerLayer(markers: []),
-                      data: (parqueos) {
-                        return MarkerLayer(
-                          markers: parqueos.map((parqueo) {
-                            return Marker(
-                              point: LatLng(parqueo.latitud, parqueo.longitud),
-                              width: 56,
-                              height: 56,
-                              child: GestureDetector(
-                                onTap: () =>
-                                    _mostrarDetalleParqueo(context, parqueo),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 6,
-                                        offset: Offset(0, 3),
+                        return parqueosAsync.when(
+                          loading: () => const MarkerLayer(markers: []),
+                          error: (_, _) => const MarkerLayer(markers: []),
+                          data: (parqueos) {
+                            return MarkerLayer(
+                              markers: parqueos.map((parqueo) {
+                                return Marker(
+                                  point: LatLng(
+                                    parqueo.latitud,
+                                    parqueo.longitud,
+                                  ),
+                                  width: 56,
+                                  height: 56,
+                                  child: GestureDetector(
+                                    onTap: () => _mostrarDetalleParqueo(
+                                      context,
+                                      parqueo,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryGreen,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 6,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                      child: const Icon(
+                                        Icons.local_parking,
+                                        color: Colors.white,
+                                        size: 34,
+                                      ),
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.local_parking,
-                                    color: Colors.white,
-                                    size: 34,
-                                  ),
-                                ),
-                              ),
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              const ReservaActivaCard(),
+            ],
           ),
-          const SizedBox(height: 16),
-          const ReservaActivaCard(),
+          _DashboardOverlayPanel(
+            item: bottomItems[_selectedBottomIndex],
+            visible: _selectedBottomIndex != 0,
+            onClose: () {
+              setState(() {
+                _selectedBottomIndex = 0;
+              });
+            },
+          ),
         ],
       ),
     );
@@ -587,6 +611,146 @@ class _DashboardBottomNavigationItem extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardOverlayPanel extends StatelessWidget {
+  const _DashboardOverlayPanel({
+    required this.item,
+    required this.visible,
+    required this.onClose,
+  });
+
+  final _DashboardBottomItem item;
+  final bool visible;
+  final VoidCallback onClose;
+
+  String get _description {
+    switch (item.label) {
+      case 'Reservas':
+        return 'Consulta tu reserva activa sin salir del mapa.';
+      case 'QR':
+        return 'Acceso rápido al módulo QR desde el panel principal.';
+      case 'Perfil':
+        return 'Revisa tu cuenta y preferencias principales.';
+      case 'Ingresos':
+        return 'Registra ingresos de vehículos desde el panel operador.';
+      case 'Cobros':
+        return 'Gestiona cobros y salidas de vehículos.';
+      default:
+        return 'Acceso rápido de La Madriguera.';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        opacity: visible ? 1 : 0,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: visible ? 7 : 0,
+                  sigmaY: visible ? 7 : 0,
+                ),
+                child: Container(color: Colors.black.withValues(alpha: 0.10)),
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 18,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOutCubic,
+                offset: visible ? Offset.zero : const Offset(0, 0.08),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFB7D6B9)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD6E5D8),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryGreen,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(item.icon, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.label,
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    _description,
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: onClose,
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ],
+                        ),
+                        if (item.label == 'Reservas') ...[
+                          const SizedBox(height: 14),
+                          const ReservaActivaCard(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
