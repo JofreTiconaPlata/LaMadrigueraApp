@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
@@ -10,7 +11,7 @@ class AdminDashboardPage extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            Icon(icon, size: 38, color: Color(0xFF2E7D32)),
+            Icon(icon, size: 38, color: AppTheme.primary),
             const SizedBox(height: 8),
             Text(
               value,

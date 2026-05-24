@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote_datasource.dart';
 import 'package:la_madriguera/features/ingresos/data/models/ingreso_dto.dart';
@@ -143,7 +144,7 @@ class _CobroPageState extends ConsumerState<CobroPage> {
           return ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              const Icon(Icons.payments, size: 90, color: Color(0xFF2E7D32)),
+              const Icon(Icons.payments, size: 90, color: AppTheme.primary),
               const SizedBox(height: 20),
               const Text(
                 'Resumen de pago',

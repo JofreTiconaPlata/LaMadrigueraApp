@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/tarifas/data/datasources/tarifas_remote_datasource.dart';
 import 'package:la_madriguera/features/tarifas/data/models/tarifa_dto.dart';
@@ -24,7 +25,7 @@ class TarifasPage extends ConsumerWidget {
   }
 
   Color _estadoColor(String estado) {
-    return estado == 'ACTIVO' ? const Color(0xFF2E7D32) : Colors.grey;
+    return estado == 'ACTIVO' ? AppTheme.primary : Colors.grey;
   }
 
   Future<void> _recargar(WidgetRef ref) async {
@@ -95,7 +96,7 @@ class TarifasPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 children: const [
                   SizedBox(height: 120),
-                  Icon(Icons.payments, size: 72, color: Color(0xFF2E7D32)),
+                  Icon(Icons.payments, size: 72, color: AppTheme.primary),
                   SizedBox(height: 16),
                   Text(
                     'No hay tarifas registradas',
@@ -135,7 +136,7 @@ class TarifasPage extends ConsumerWidget {
                           tarifa.tipoVehiculo == 'MOTO'
                               ? Icons.two_wheeler
                               : Icons.directions_car,
-                          color: const Color(0xFF2E7D32),
+                          color: AppTheme.primary,
                         ),
                       ),
                       title: Text(
