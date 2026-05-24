@@ -481,6 +481,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 _selectedBottomIndex = 0;
               });
             },
+            onOpenRoute: (route) => Navigator.pushNamed(context, route),
           ),
         ],
       ),
@@ -622,26 +623,147 @@ class _DashboardOverlayPanel extends StatelessWidget {
     required this.item,
     required this.visible,
     required this.onClose,
+    required this.onOpenRoute,
   });
 
   final _DashboardBottomItem item;
   final bool visible;
   final VoidCallback onClose;
+  final ValueChanged<String> onOpenRoute;
+
+  String get _title {
+    switch (item.label) {
+      case 'Reservas':
+        return 'Mis reservas';
+      case 'QR':
+        return 'Acceso QR';
+      case 'Perfil':
+        return 'Mi perfil';
+      case 'Ingresos':
+        return 'Registrar ingreso';
+      case 'Cobros':
+        return 'Cobro y salida';
+      default:
+        return item.label;
+    }
+  }
 
   String get _description {
     switch (item.label) {
       case 'Reservas':
-        return 'Consulta tu reserva activa sin salir del mapa.';
+        return 'Consulta tu reserva activa, revisa el parqueo seleccionado y continúa el flujo sin salir del mapa.';
       case 'QR':
-        return 'Acceso rápido al módulo QR desde el panel principal.';
+        return 'Gestiona códigos QR para validar tiempo, acceso o control de parqueo de forma rápida.';
       case 'Perfil':
-        return 'Revisa tu cuenta y preferencias principales.';
+        return 'Revisa los datos principales de tu cuenta y accede a la configuración del usuario.';
       case 'Ingresos':
-        return 'Registra ingresos de vehículos desde el panel operador.';
+        return 'Registra el ingreso de vehículos al parqueo y mantén actualizado el control operativo.';
       case 'Cobros':
-        return 'Gestiona cobros y salidas de vehículos.';
+        return 'Gestiona salidas, calcula cobros y finaliza estacionamientos activos.';
       default:
-        return 'Acceso rápido de La Madriguera.';
+        return 'Acceso rápido desde el panel principal de La Madriguera.';
+    }
+  }
+
+  List<_OverlayInfoItem> get _infoItems {
+    switch (item.label) {
+      case 'Reservas':
+        return const [
+          _OverlayInfoItem(
+            icon: Icons.confirmation_number_rounded,
+            title: 'Reserva activa',
+            subtitle:
+                'Muestra el parqueo, placa y hora de entrada si existe una reserva en curso.',
+          ),
+          _OverlayInfoItem(
+            icon: Icons.map_rounded,
+            title: 'Contexto del mapa',
+            subtitle:
+                'El mapa permanece visible para no perder la ubicación del parqueo.',
+          ),
+        ];
+      case 'QR':
+        return const [
+          _OverlayInfoItem(
+            icon: Icons.qr_code_2_rounded,
+            title: 'Validación rápida',
+            subtitle:
+                'Accede al módulo QR para consultar o validar tickets de parqueo.',
+          ),
+          _OverlayInfoItem(
+            icon: Icons.security_rounded,
+            title: 'Control seguro',
+            subtitle:
+                'Ideal para flujos donde se necesita comprobar tiempo o acceso.',
+          ),
+        ];
+      case 'Perfil':
+        return const [
+          _OverlayInfoItem(
+            icon: Icons.person_rounded,
+            title: 'Cuenta del usuario',
+            subtitle:
+                'Accede a tus datos personales y preferencias principales.',
+          ),
+          _OverlayInfoItem(
+            icon: Icons.logout_rounded,
+            title: 'Sesión',
+            subtitle:
+                'Desde el perfil puedes revisar tu cuenta o cerrar sesión.',
+          ),
+        ];
+      case 'Ingresos':
+        return const [
+          _OverlayInfoItem(
+            icon: Icons.login_rounded,
+            title: 'Nuevo ingreso',
+            subtitle:
+                'Registra placa, tipo de vehículo y datos necesarios para iniciar el estacionamiento.',
+          ),
+          _OverlayInfoItem(
+            icon: Icons.directions_car_rounded,
+            title: 'Vehículos activos',
+            subtitle:
+                'Mantén control de los vehículos actualmente estacionados.',
+          ),
+        ];
+      case 'Cobros':
+        return const [
+          _OverlayInfoItem(
+            icon: Icons.point_of_sale_rounded,
+            title: 'Finalizar salida',
+            subtitle:
+                'Calcula el cobro y registra la salida del vehículo estacionado.',
+          ),
+          _OverlayInfoItem(
+            icon: Icons.receipt_long_rounded,
+            title: 'Control operativo',
+            subtitle: 'Apoya el cierre correcto de ingresos activos y pagos.',
+          ),
+        ];
+      default:
+        return const [
+          _OverlayInfoItem(
+            icon: Icons.info_rounded,
+            title: 'Acceso rápido',
+            subtitle: 'Selecciona una acción para continuar.',
+          ),
+        ];
+    }
+  }
+
+  String get _primaryActionLabel {
+    switch (item.label) {
+      case 'QR':
+        return 'Abrir módulo QR';
+      case 'Perfil':
+        return 'Ver perfil';
+      case 'Ingresos':
+        return 'Registrar ingreso';
+      case 'Cobros':
+        return 'Ir a cobros';
+      default:
+        return 'Abrir ${item.label}';
     }
   }
 
@@ -672,82 +794,177 @@ class _DashboardOverlayPanel extends StatelessWidget {
                 duration: const Duration(milliseconds: 320),
                 curve: Curves.easeOutCubic,
                 offset: visible ? Offset.zero : const Offset(0, 0.08),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFB7D6B9)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.16),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: 280,
+                    maxHeight: 420,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFD6E5D8),
-                            borderRadius: BorderRadius.circular(99),
-                          ),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: const Color(0xFFB7D6B9)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.16),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
                         ),
-                        const SizedBox(height: 14),
-                        Row(
-                          children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryGreen,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(item.icon, color: Colors.white),
+                      ],
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD6E5D8),
+                              borderRadius: BorderRadius.circular(99),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.label,
-                                    style: const TextStyle(
-                                      color: AppTheme.textPrimary,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    _description,
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                ],
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryGreen,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(item.icon, color: Colors.white),
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _title,
+                                      style: const TextStyle(
+                                        color: AppTheme.textPrimary,
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _description,
+                                      style: const TextStyle(
+                                        color: AppTheme.textSecondary,
+                                        fontSize: 13,
+                                        height: 1.25,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: onClose,
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ..._infoItems.map(
+                            (info) => Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: _OverlayInfoTile(info: info),
                             ),
-                            IconButton(
-                              onPressed: onClose,
-                              icon: const Icon(Icons.close_rounded),
+                          ),
+                          if (item.label == 'Reservas') ...[
+                            const SizedBox(height: 4),
+                            const ReservaActivaCard(),
+                          ],
+                          if (item.route != null) ...[
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () => onOpenRoute(item.route!),
+                                icon: const Icon(Icons.arrow_forward_rounded),
+                                label: Text(_primaryActionLabel),
+                              ),
                             ),
                           ],
-                        ),
-                        if (item.label == 'Reservas') ...[
-                          const SizedBox(height: 14),
-                          const ReservaActivaCard(),
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverlayInfoItem {
+  const _OverlayInfoItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+}
+
+class _OverlayInfoTile extends StatelessWidget {
+  const _OverlayInfoTile({required this.info});
+
+  final _OverlayInfoItem info;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F8F4),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE0EEE2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(info.icon, color: AppTheme.primaryGreen, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    info.title,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    info.subtitle,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 12.5,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
