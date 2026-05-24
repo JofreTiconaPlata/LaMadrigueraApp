@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,8 +7,10 @@ import 'package:latlong2/latlong.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
+import 'package:la_madriguera/features/dashboard/presentation/config/map_city_presets.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
+import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
@@ -17,10 +21,18 @@ final parqueosDashboardProvider = FutureProvider<List<ParqueoDto>>((ref) async {
   return dataSource.getParqueos();
 });
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
-  static final LatLng _centroMapa = LatLng(-17.3935, -66.1570);
+  @override
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  int _selectedBottomIndex = 0;
+
+  static final LatLng _centroMapa = MapCityPresets.defaultCity.center;
+  static final double _zoomMapa = MapCityPresets.defaultCity.zoom;
 
   Widget _drawerOption(
     BuildContext context,
@@ -91,13 +103,6 @@ class HomePage extends ConsumerWidget {
           'Vehículos estacionados',
           RouteNames.vehiculosEstacionados,
         ),
-        _drawerOption(
-          context,
-          Icons.add_location_alt,
-          'Crear parqueo',
-          RouteNames.crearParqueo,
-        ),
-        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
           context,
           Icons.point_of_sale,
@@ -223,7 +228,11 @@ class HomePage extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.pop(sheetContext);
-                    Navigator.pushNamed(context, RouteNames.crearReserva);
+                    Navigator.pushNamed(
+                      context,
+                      RouteNames.crearReserva,
+                      arguments: parqueo.toEntity(),
+                    );
                   },
                   icon: const Icon(Icons.timer),
                   label: const Text('Reservar espacio'),
@@ -234,6 +243,54 @@ class HomePage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  List<_DashboardBottomItem> _bottomItemsByRole(RolEnum? rol) {
+    if (rol == RolEnum.operador) {
+      return const [
+        _DashboardBottomItem(icon: Icons.dashboard_rounded, label: 'Panel'),
+        _DashboardBottomItem(
+          icon: Icons.login_rounded,
+          label: 'Ingresos',
+          route: RouteNames.registrarIngreso,
+        ),
+        _DashboardBottomItem(
+          icon: Icons.qr_code_scanner_rounded,
+          label: 'QR',
+          route: RouteNames.qrTiempo,
+        ),
+        _DashboardBottomItem(
+          icon: Icons.point_of_sale_rounded,
+          label: 'Cobros',
+          route: RouteNames.salidasCobros,
+        ),
+      ];
+    }
+
+    return const [
+      _DashboardBottomItem(icon: Icons.explore_rounded, label: 'Explorar'),
+      _DashboardBottomItem(
+        icon: Icons.local_parking_rounded,
+        label: 'Espacios',
+        route: RouteNames.espacios,
+      ),
+      _DashboardBottomItem(
+        icon: Icons.history_rounded,
+        label: 'Historial',
+        route: RouteNames.historial,
+      ),
+      _DashboardBottomItem(
+        icon: Icons.person_rounded,
+        label: 'Perfil',
+        route: RouteNames.perfil,
+      ),
+    ];
+  }
+
+  void _onBottomItemTap(int index) {
+    setState(() {
+      _selectedBottomIndex = index;
+    });
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
@@ -248,8 +305,9 @@ class HomePage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final usuario = ref.watch(sessionProvider);
+    final bottomItems = _bottomItemsByRole(usuario?.rol);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -322,81 +380,394 @@ class HomePage extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      bottomNavigationBar: _DashboardBottomNavigation(
+        selectedIndex: _selectedBottomIndex,
+        items: bottomItems,
+        onItemTap: _onBottomItemTap,
+      ),
+      body: Stack(
         children: [
-          Container(
-            height: 520,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFFB7D6B9)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+          ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            children: [
+              Container(
+                height: 520,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: const Color(0xFFB7D6B9)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: FlutterMap(
-              options: MapOptions(initialCenter: _centroMapa, initialZoom: 14),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.programovil.lamadriguera',
-                ),
-                Consumer(
-                  builder: (context, ref, _) {
-                    final parqueosAsync = ref.watch(parqueosDashboardProvider);
+                clipBehavior: Clip.antiAlias,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: _centroMapa,
+                    initialZoom: _zoomMapa,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.programovil.lamadriguera',
+                    ),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final parqueosAsync = ref.watch(
+                          parqueosDashboardProvider,
+                        );
 
-                    return parqueosAsync.when(
-                      loading: () => const MarkerLayer(markers: []),
-                      error: (_, _) => const MarkerLayer(markers: []),
-                      data: (parqueos) {
-                        return MarkerLayer(
-                          markers: parqueos.map((parqueo) {
-                            return Marker(
-                              point: LatLng(parqueo.latitud, parqueo.longitud),
-                              width: 56,
-                              height: 56,
-                              child: GestureDetector(
-                                onTap: () =>
-                                    _mostrarDetalleParqueo(context, parqueo),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.primaryGreen,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Colors.black26,
-                                        blurRadius: 6,
-                                        offset: Offset(0, 3),
+                        return parqueosAsync.when(
+                          loading: () => const MarkerLayer(markers: []),
+                          error: (_, _) => const MarkerLayer(markers: []),
+                          data: (parqueos) {
+                            return MarkerLayer(
+                              markers: parqueos.map((parqueo) {
+                                return Marker(
+                                  point: LatLng(
+                                    parqueo.latitud,
+                                    parqueo.longitud,
+                                  ),
+                                  width: 56,
+                                  height: 56,
+                                  child: GestureDetector(
+                                    onTap: () => _mostrarDetalleParqueo(
+                                      context,
+                                      parqueo,
+                                    ),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.primaryGreen,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: const [
+                                          BoxShadow(
+                                            color: Colors.black26,
+                                            blurRadius: 6,
+                                            offset: Offset(0, 3),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                      child: const Icon(
+                                        Icons.local_parking,
+                                        color: Colors.white,
+                                        size: 34,
+                                      ),
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.local_parking,
-                                    color: Colors.white,
-                                    size: 34,
-                                  ),
-                                ),
-                              ),
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
                         );
                       },
-                    );
-                  },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 16),
+              const ReservaActivaCard(),
+            ],
           ),
-          const SizedBox(height: 16),
-          const ReservaActivaCard(),
+          _DashboardOverlayPanel(
+            item: bottomItems[_selectedBottomIndex],
+            visible: _selectedBottomIndex != 0,
+            onClose: () {
+              setState(() {
+                _selectedBottomIndex = 0;
+              });
+            },
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _DashboardBottomItem {
+  const _DashboardBottomItem({
+    required this.icon,
+    required this.label,
+    this.route,
+  });
+
+  final IconData icon;
+  final String label;
+  final String? route;
+}
+
+class _DashboardBottomNavigation extends StatelessWidget {
+  const _DashboardBottomNavigation({
+    required this.selectedIndex,
+    required this.items,
+    required this.onItemTap,
+  });
+
+  final int selectedIndex;
+  final List<_DashboardBottomItem> items;
+  final ValueChanged<int> onItemTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutCubic,
+        tween: Tween(begin: 16, end: 0),
+        builder: (context, offset, child) {
+          return Transform.translate(offset: Offset(0, offset), child: child);
+        },
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppTheme.primaryGreen,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.14),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              children: List.generate(items.length, (index) {
+                final item = items[index];
+                final isSelected = index == selectedIndex;
+
+                return Expanded(
+                  child: _DashboardBottomNavigationItem(
+                    item: item,
+                    isSelected: isSelected,
+                    onTap: () => onItemTap(index),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardBottomNavigationItem extends StatelessWidget {
+  const _DashboardBottomNavigationItem({
+    required this.item,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final _DashboardBottomItem item;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: item.label,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                scale: isSelected ? 1.06 : 1,
+                child: Icon(
+                  item.icon,
+                  color: isSelected ? AppTheme.primaryGreen : Colors.white,
+                  size: 23,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isSelected ? AppTheme.primaryGreen : Colors.white,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardOverlayPanel extends StatelessWidget {
+  const _DashboardOverlayPanel({
+    required this.item,
+    required this.visible,
+    required this.onClose,
+  });
+
+  final _DashboardBottomItem item;
+  final bool visible;
+  final VoidCallback onClose;
+
+  String get _description {
+    switch (item.label) {
+      case 'Reservas':
+        return 'Consulta tu reserva activa sin salir del mapa.';
+      case 'QR':
+        return 'Acceso rápido al módulo QR desde el panel principal.';
+      case 'Perfil':
+        return 'Revisa tu cuenta y preferencias principales.';
+      case 'Ingresos':
+        return 'Registra ingresos de vehículos desde el panel operador.';
+      case 'Cobros':
+        return 'Gestiona cobros y salidas de vehículos.';
+      default:
+        return 'Acceso rápido de La Madriguera.';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOutCubic,
+        opacity: visible ? 1 : 0,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: visible ? 7 : 0,
+                  sigmaY: visible ? 7 : 0,
+                ),
+                child: Container(color: Colors.black.withValues(alpha: 0.10)),
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 18,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 320),
+                curve: Curves.easeOutCubic,
+                offset: visible ? Offset.zero : const Offset(0, 0.08),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFB7D6B9)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.16),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD6E5D8),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryGreen,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(item.icon, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.label,
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    _description,
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: onClose,
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                          ],
+                        ),
+                        if (item.label == 'Reservas') ...[
+                          const SizedBox(height: 14),
+                          const ReservaActivaCard(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+extension ParqueoDtoMapper on ParqueoDto {
+  ParqueoEntity toEntity() {
+    return ParqueoEntity(
+      id: id.toString(),
+      nombre: nombre,
+      direccion: direccion,
+      espaciosAutos: espaciosAutos,
+      espaciosMotos: espaciosMotos,
+      precioHora: 0,
+      latitud: latitud,
+      longitud: longitud,
     );
   }
 }
