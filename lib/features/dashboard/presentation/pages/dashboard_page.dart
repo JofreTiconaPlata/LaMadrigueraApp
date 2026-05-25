@@ -64,12 +64,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   List<Widget> _drawerOptionsByRole(BuildContext context, RolEnum? rol) {
     final commonOptions = <Widget>[
       _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
-      _drawerOption(
-        context,
-        Icons.local_parking,
-        'Disponibilidad de espacios',
-        RouteNames.espacios,
-      ),
       _drawerOption(context, Icons.history, 'Historial', RouteNames.historial),
     ];
 
