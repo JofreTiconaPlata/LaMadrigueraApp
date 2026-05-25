@@ -170,7 +170,7 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${reserva.tipoVehiculo} • Placa ${reserva.placa}',
+            '${reserva.tipoVehiculo} � Placa ${reserva.placa}',
             style: const TextStyle(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 4),
