@@ -3,7 +3,8 @@ import {
   countParqueosActivosByOperadorRepository,
   createParqueoRepository,
   findParqueoByIdRepository,
-  findParqueosActivosRepository
+  findParqueosActivosRepository,
+  findParqueosByOperadorRepository
 } from './parqueos.repository';
 
 const MAX_PARQUEOS_POR_OPERADOR = 3;
@@ -40,6 +41,14 @@ const toParqueoResponse = (parqueo: {
 
 export const getParqueosService = async (): Promise<ParqueoResponse[]> => {
   const parqueos = await findParqueosActivosRepository();
+
+  return parqueos.map(toParqueoResponse);
+};
+
+export const getMisParqueosService = async (
+  operadorId: number
+): Promise<ParqueoResponse[]> => {
+  const parqueos = await findParqueosByOperadorRepository(operadorId);
 
   return parqueos.map(toParqueoResponse);
 };

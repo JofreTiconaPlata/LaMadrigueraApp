@@ -6,6 +6,7 @@ import {
 } from './parqueos.schema';
 import {
   createParqueoService,
+  getMisParqueosService,
   getParqueoByIdService,
   getParqueosService
 } from './parqueos.service';
@@ -25,6 +26,41 @@ export const getParqueosController = async (
     res.status(500).json({
       ok: false,
       message: 'Error interno al obtener parqueos'
+    });
+  }
+};
+
+export const getMisParqueosController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({
+      ok: false,
+      message: 'Usuario no autenticado'
+    });
+    return;
+  }
+
+  if (req.user.rol !== 'OPERADOR') {
+    res.status(403).json({
+      ok: false,
+      message: 'Solo un operador puede consultar sus parqueos'
+    });
+    return;
+  }
+
+  try {
+    const parqueos = await getMisParqueosService(req.user.id);
+
+    res.status(200).json({
+      ok: true,
+      data: parqueos
+    });
+  } catch {
+    res.status(500).json({
+      ok: false,
+      message: 'Error interno al obtener los parqueos del operador'
     });
   }
 };

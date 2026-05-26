@@ -34,6 +34,18 @@ export const findParqueosActivosRepository = () => {
   });
 };
 
+export const findParqueosByOperadorRepository = (operadorId: number) => {
+  return prisma.parqueo.findMany({
+    where: {
+      operadorId,
+      estado: 'ACTIVO'
+    },
+    orderBy: {
+      id: 'asc'
+    }
+  });
+};
+
 export const findParqueoByIdRepository = (id: number) => {
   return prisma.parqueo.findUnique({
     where: {
