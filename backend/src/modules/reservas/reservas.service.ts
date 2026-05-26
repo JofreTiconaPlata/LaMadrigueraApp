@@ -1,5 +1,6 @@
 import { CreateReservaInput, ReservaResponse } from './reservas.types';
 import {
+  cancelReservaRepository,
   createReservaConEspacioRepository,
   findClienteByUsuarioIdRepository,
   findParqueoByIdRepository,
@@ -144,4 +145,40 @@ export const createReservaService = async (
   );
 
   return toReservaResponse(reserva);
+};
+
+export const cancelReservaService = async (
+  id: number,
+  usuario: { id: number; rol: RolUsuario }
+): Promise<ReservaResponse> => {
+  if (usuario.rol === 'CLIENTE') {
+    const clienteId = await getClienteIdFromUsuario(usuario.id);
+    const reserva = await assertReservaBelongsToCliente(id, clienteId);
+
+    if (reserva.estado !== 'ACTIVA' && reserva.estado !== 'PENDIENTE') {
+      throw new Error('RESERVA_NOT_CANCELABLE');
+    }
+
+    const reservaCancelada = await cancelReservaRepository(id);
+
+    return toReservaResponse(reservaCancelada);
+  }
+
+  if (usuario.rol === 'ADMIN') {
+    const reserva = await findReservaByIdRepository(id);
+
+    if (!reserva) {
+      throw new Error('RESERVA_NOT_FOUND');
+    }
+
+    if (reserva.estado !== 'ACTIVA' && reserva.estado !== 'PENDIENTE') {
+      throw new Error('RESERVA_NOT_CANCELABLE');
+    }
+
+    const reservaCancelada = await cancelReservaRepository(id);
+
+    return toReservaResponse(reservaCancelada);
+  }
+
+  throw new Error('RESERVA_FORBIDDEN');
 };

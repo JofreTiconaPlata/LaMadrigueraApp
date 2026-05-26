@@ -6,6 +6,7 @@ import {
   reservasQuerySchema
 } from './reservas.schema';
 import {
+  cancelReservaService,
   createReservaService,
   getMisReservasService,
   getReservaByIdService,
@@ -75,6 +76,14 @@ const handleReservaError = (
     res.status(409).json({
       ok: false,
       message: 'No hay espacios disponibles para el tipo de vehículo'
+    });
+    return true;
+  }
+
+  if (error instanceof Error && error.message === 'RESERVA_NOT_CANCELABLE') {
+    res.status(409).json({
+      ok: false,
+      message: 'La reserva no puede ser cancelada en su estado actual'
     });
     return true;
   }
@@ -232,6 +241,48 @@ export const createReservaController = async (
     res.status(500).json({
       ok: false,
       message: 'Error interno al crear reserva'
+    });
+  }
+};
+
+export const cancelReservaController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  const parsedParams = reservaIdParamsSchema.safeParse(req.params);
+
+  if (!parsedParams.success) {
+    res.status(400).json({
+      ok: false,
+      message: 'Parámetros inválidos',
+      errors: parsedParams.error.flatten().fieldErrors
+    });
+    return;
+  }
+
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  try {
+    const reserva = await cancelReservaService(parsedParams.data.id, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
+
+    res.status(200).json({
+      ok: true,
+      message: 'Reserva cancelada correctamente',
+      data: reserva
+    });
+  } catch (error) {
+    if (handleReservaError(error, res)) {
+      return;
+    }
+
+    res.status(500).json({
+      ok: false,
+      message: 'Error interno al cancelar reserva'
     });
   }
 };

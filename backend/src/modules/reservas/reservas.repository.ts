@@ -92,3 +92,39 @@ export const createReservaConEspacioRepository = async (
     return reserva;
   });
 };
+
+export const cancelReservaRepository = (id: number) => {
+  return prisma.$transaction(async (tx) => {
+    const reserva = await tx.reserva.findUnique({
+      where: {
+        id
+      }
+    });
+
+    if (!reserva) {
+      throw new Error('RESERVA_NOT_FOUND');
+    }
+
+    const reservaCancelada = await tx.reserva.update({
+      where: {
+        id
+      },
+      data: {
+        estado: 'CANCELADA'
+      }
+    });
+
+    if (reserva.espacioId) {
+      await tx.espacio.update({
+        where: {
+          id: reserva.espacioId
+        },
+        data: {
+          estado: 'DISPONIBLE'
+        }
+      });
+    }
+
+    return reservaCancelada;
+  });
+};
