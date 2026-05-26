@@ -25,6 +25,25 @@ export const findParqueoByIdRepository = (parqueoId: number) => {
   });
 };
 
+export const findReservasRepository = (clienteId?: number) => {
+  return prisma.reserva.findMany({
+    where: {
+      ...(clienteId ? { clienteId } : {})
+    },
+    orderBy: {
+      id: 'desc'
+    }
+  });
+};
+
+export const findReservaByIdRepository = (id: number) => {
+  return prisma.reserva.findUnique({
+    where: {
+      id
+    }
+  });
+};
+
 export const createReservaConEspacioRepository = async (
   clienteId: number,
   input: CreateReservaInput,

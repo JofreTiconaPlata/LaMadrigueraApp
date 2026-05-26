@@ -3,6 +3,8 @@ import {
   createReservaConEspacioRepository,
   findClienteByUsuarioIdRepository,
   findParqueoByIdRepository,
+  findReservaByIdRepository,
+  findReservasRepository,
   findVehiculoByIdRepository
 } from './reservas.repository';
 
@@ -31,6 +33,83 @@ const toReservaResponse = (reserva: {
   createdAt: reserva.createdAt,
   updatedAt: reserva.updatedAt
 });
+
+const getClienteIdFromUsuario = async (usuarioId: number): Promise<number> => {
+  const cliente = await findClienteByUsuarioIdRepository(usuarioId);
+
+  if (!cliente) {
+    throw new Error('CLIENTE_PROFILE_NOT_FOUND');
+  }
+
+  return cliente.id;
+};
+
+const assertReservaBelongsToCliente = async (
+  reservaId: number,
+  clienteId: number
+) => {
+  const reserva = await findReservaByIdRepository(reservaId);
+
+  if (!reserva) {
+    throw new Error('RESERVA_NOT_FOUND');
+  }
+
+  if (reserva.clienteId !== clienteId) {
+    throw new Error('RESERVA_FORBIDDEN');
+  }
+
+  return reserva;
+};
+
+export const getReservasService = async (
+  clienteId: number | undefined,
+  usuario: { id: number; rol: RolUsuario }
+): Promise<ReservaResponse[]> => {
+  if (usuario.rol !== 'ADMIN') {
+    throw new Error('RESERVA_FORBIDDEN');
+  }
+
+  const reservas = await findReservasRepository(clienteId);
+
+  return reservas.map(toReservaResponse);
+};
+
+export const getMisReservasService = async (
+  usuario: { id: number; rol: RolUsuario }
+): Promise<ReservaResponse[]> => {
+  if (usuario.rol !== 'CLIENTE') {
+    throw new Error('RESERVA_FORBIDDEN');
+  }
+
+  const clienteId = await getClienteIdFromUsuario(usuario.id);
+  const reservas = await findReservasRepository(clienteId);
+
+  return reservas.map(toReservaResponse);
+};
+
+export const getReservaByIdService = async (
+  id: number,
+  usuario: { id: number; rol: RolUsuario }
+): Promise<ReservaResponse> => {
+  if (usuario.rol === 'CLIENTE') {
+    const clienteId = await getClienteIdFromUsuario(usuario.id);
+    const reserva = await assertReservaBelongsToCliente(id, clienteId);
+
+    return toReservaResponse(reserva);
+  }
+
+  if (usuario.rol === 'ADMIN') {
+    const reserva = await findReservaByIdRepository(id);
+
+    if (!reserva) {
+      throw new Error('RESERVA_NOT_FOUND');
+    }
+
+    return toReservaResponse(reserva);
+  }
+
+  throw new Error('RESERVA_FORBIDDEN');
+};
 
 export const createReservaService = async (
   input: CreateReservaInput,
