@@ -24,3 +24,11 @@ export interface CreateParqueoInput {
   espaciosMotos: number;
   qrPagoUrl?: string | null;
 }
+
+export interface UpdateParqueoInput {
+  nombre?: string;
+  direccion?: string;
+  latitud?: number;
+  longitud?: number;
+  qrPagoUrl?: string | null;
+}

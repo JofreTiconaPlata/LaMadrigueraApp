@@ -18,3 +18,11 @@ export interface CreateVehiculoInput {
   modelo?: string;
   color?: string;
 }
+
+export interface CreateVehiculoBody {
+  placa: string;
+  tipo: 'AUTO' | 'MOTO' | 'CAMIONETA';
+  marca?: string;
+  modelo?: string;
+  color?: string;
+}

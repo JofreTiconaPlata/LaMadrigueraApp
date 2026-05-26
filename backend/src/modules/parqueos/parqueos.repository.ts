@@ -1,5 +1,5 @@
 import { prisma } from '../../config/prisma';
-import { CreateParqueoInput } from './parqueos.types';
+import { CreateParqueoInput, UpdateParqueoInput } from './parqueos.types';
 
 const buildEspaciosParqueo = (
   parqueoId: number,
@@ -26,6 +26,18 @@ const buildEspaciosParqueo = (
 export const findParqueosActivosRepository = () => {
   return prisma.parqueo.findMany({
     where: {
+      estado: 'ACTIVO'
+    },
+    orderBy: {
+      id: 'asc'
+    }
+  });
+};
+
+export const findParqueosByOperadorRepository = (operadorId: number) => {
+  return prisma.parqueo.findMany({
+    where: {
+      operadorId,
       estado: 'ACTIVO'
     },
     orderBy: {
@@ -81,5 +93,35 @@ export const createParqueoRepository = async (input: CreateParqueoInput) => {
     }
 
     return parqueo;
+  });
+};
+
+
+export const updateParqueoRepository = (
+  id: number,
+  input: UpdateParqueoInput
+) => {
+  return prisma.parqueo.update({
+    where: {
+      id
+    },
+    data: {
+      ...(input.nombre !== undefined ? { nombre: input.nombre } : {}),
+      ...(input.direccion !== undefined ? { direccion: input.direccion } : {}),
+      ...(input.latitud !== undefined ? { latitud: input.latitud } : {}),
+      ...(input.longitud !== undefined ? { longitud: input.longitud } : {}),
+      ...(input.qrPagoUrl !== undefined ? { qrPagoUrl: input.qrPagoUrl } : {})
+    }
+  });
+};
+
+export const deactivateParqueoRepository = (id: number) => {
+  return prisma.parqueo.update({
+    where: {
+      id
+    },
+    data: {
+      estado: 'INACTIVO'
+    }
   });
 };

@@ -33,3 +33,29 @@ export const createParqueoBodySchema = z.object({
     path: ['espaciosAutos']
   }
 );
+
+export const updateParqueoBodySchema = z.object({
+  nombre: z.string().trim().min(2, 'El nombre es obligatorio').optional(),
+  direccion: z.string().trim().min(2, 'La dirección es obligatoria').optional(),
+  latitud: z.coerce
+    .number()
+    .min(-90, 'La latitud debe ser válida')
+    .max(90, 'La latitud debe ser válida')
+    .optional(),
+  longitud: z.coerce
+    .number()
+    .min(-180, 'La longitud debe ser válida')
+    .max(180, 'La longitud debe ser válida')
+    .optional(),
+  qrPagoUrl: z
+    .string()
+    .trim()
+    .url('El QR de pago debe ser una URL válida')
+    .nullable()
+    .optional()
+}).refine(
+  (data) => Object.keys(data).length > 0,
+  {
+    message: 'Debe enviar al menos un campo para actualizar'
+  }
+);
