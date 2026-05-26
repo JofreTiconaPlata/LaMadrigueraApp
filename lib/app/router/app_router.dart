@@ -14,6 +14,7 @@ import 'package:la_madriguera/features/parqueos/presentation/pages/crear_parqueo
 import 'package:la_madriguera/features/perfil/presentation/pages/perfil_page.dart';
 import 'package:la_madriguera/features/qr/presentation/pages/qr_tiempo_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/pages/crear_reserva_page.dart';
+import 'package:la_madriguera/features/reservas/presentation/pages/mis_reservas_page.dart';
 import 'package:la_madriguera/features/salidas_cobros/presentation/pages/salidas_cobros_page.dart';
 import 'package:la_madriguera/features/tarifas/presentation/pages/tarifas_page.dart';
 import 'package:la_madriguera/features/vehiculos/presentation/pages/vehiculos_page.dart';
@@ -92,6 +93,9 @@ class AppRouter {
             ),
           ),
         );
+
+      case RouteNames.misReservas:
+        return MaterialPageRoute(builder: (_) => const MisReservasPage());
 
       case RouteNames.qrTiempo:
         return MaterialPageRoute(builder: (_) => const QrTiempoPage());
