@@ -1,6 +1,14 @@
 import { prisma } from '../../config/prisma';
 import { CreateVehiculoInput } from './vehiculos.types';
 
+export const findClienteByUsuarioIdRepository = (usuarioId: number) => {
+  return prisma.cliente.findUnique({
+    where: {
+      usuarioId
+    }
+  });
+};
+
 export const findVehiculosRepository = (clienteId?: number) => {
   return prisma.vehiculo.findMany({
     where: {
