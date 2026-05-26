@@ -9,6 +9,7 @@ class RouteNames {
 
   static const String perfil = '/perfil';
   static const String registrarIngreso = '/registrar-ingreso';
+  static const String vehiculos = '/vehiculos';
   static const String vehiculosEstacionados = '/vehiculos-estacionados';
   static const String espacios = '/espacios';
   static const String historial = '/historial';
