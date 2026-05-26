@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 import {
   createParqueoBodySchema,
   parqueoIdParamsSchema
@@ -67,7 +68,7 @@ export const getParqueoByIdController = async (
 };
 
 export const createParqueoController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedBody = createParqueoBodySchema.safeParse(req.body);
@@ -81,15 +82,45 @@ export const createParqueoController = async (
     return;
   }
 
+  if (!req.user) {
+    res.status(401).json({
+      ok: false,
+      message: 'Usuario no autenticado'
+    });
+    return;
+  }
+
+  if (req.user.rol !== 'OPERADOR') {
+    res.status(403).json({
+      ok: false,
+      message: 'Solo un operador puede crear parqueos'
+    });
+    return;
+  }
+
   try {
-    const parqueo = await createParqueoService(parsedBody.data);
+    const parqueo = await createParqueoService({
+      ...parsedBody.data,
+      operadorId: req.user.id
+    });
 
     res.status(201).json({
       ok: true,
       message: 'Parqueo creado correctamente',
       data: parqueo
     });
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === 'MAX_PARQUEOS_OPERADOR'
+    ) {
+      res.status(409).json({
+        ok: false,
+        message: 'El operador no puede tener más de 3 parqueos activos'
+      });
+      return;
+    }
+
     res.status(500).json({
       ok: false,
       message: 'Error interno al crear parqueo'

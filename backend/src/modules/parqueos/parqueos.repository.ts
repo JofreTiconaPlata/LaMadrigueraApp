@@ -20,9 +20,19 @@ export const findParqueoByIdRepository = (id: number) => {
   });
 };
 
+export const countParqueosActivosByOperadorRepository = (operadorId: number) => {
+  return prisma.parqueo.count({
+    where: {
+      operadorId,
+      estado: 'ACTIVO'
+    }
+  });
+};
+
 export const createParqueoRepository = (input: CreateParqueoInput) => {
   return prisma.parqueo.create({
     data: {
+      operadorId: input.operadorId,
       nombre: input.nombre,
       direccion: input.direccion,
       latitud: input.latitud,
@@ -30,6 +40,7 @@ export const createParqueoRepository = (input: CreateParqueoInput) => {
       espaciosAutos: input.espaciosAutos,
       espaciosMotos: input.espaciosMotos,
       capacidadTotal: input.espaciosAutos + input.espaciosMotos,
+      qrPagoUrl: input.qrPagoUrl ?? null,
       estado: 'ACTIVO'
     }
   });
