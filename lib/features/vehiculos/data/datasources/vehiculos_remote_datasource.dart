@@ -8,6 +8,16 @@ class VehiculosRemoteDataSource {
 
   final Dio _dio;
 
+  String? _textoOpcional(String? value) {
+    final text = value?.trim();
+
+    if (text == null || text.isEmpty) {
+      return null;
+    }
+
+    return text;
+  }
+
   Future<List<VehiculoDto>> getVehiculos({int? clienteId}) async {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.vehiculos,
@@ -32,7 +42,6 @@ class VehiculosRemoteDataSource {
   }
 
   Future<VehiculoDto> createVehiculo({
-    required int clienteId,
     required String placa,
     required String tipo,
     String? marca,
@@ -42,12 +51,11 @@ class VehiculosRemoteDataSource {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.vehiculos,
       data: {
-        'clienteId': clienteId,
-        'placa': placa,
+        'placa': placa.trim().toUpperCase(),
         'tipo': tipo,
-        'marca': ?marca,
-        'modelo': ?modelo,
-        'color': ?color,
+        'marca': ?_textoOpcional(marca),
+        'modelo': ?_textoOpcional(modelo),
+        'color': ?_textoOpcional(color),
       },
     );
 

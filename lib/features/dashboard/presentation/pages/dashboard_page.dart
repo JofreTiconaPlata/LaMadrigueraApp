@@ -136,6 +136,18 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return [
       ...commonOptions,
+      _drawerOption(
+        context,
+        Icons.directions_car,
+        'Mis vehículos',
+        RouteNames.vehiculos,
+      ),
+      _drawerOption(
+        context,
+        Icons.event_available,
+        'Mis reservas',
+        RouteNames.misReservas,
+      ),
       _drawerOption(context, Icons.qr_code_2, 'Código QR', RouteNames.qrTiempo),
     ];
   }
