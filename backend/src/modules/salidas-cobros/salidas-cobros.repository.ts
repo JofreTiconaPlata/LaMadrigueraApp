@@ -11,7 +11,8 @@ const includeSalidaCobroDetalle = {
         select: {
           id: true,
           nombre: true,
-          direccion: true
+          direccion: true,
+          operadorId: true
         }
       },
       espacio: {
@@ -56,12 +57,22 @@ const includeSalidaCobroDetalle = {
 
 export const findSalidasCobrosRepository = (
   ingresoId?: number,
-  estadoPago?: 'PENDIENTE' | 'PAGADO' | 'ANULADO'
+  estadoPago?: 'PENDIENTE' | 'PAGADO' | 'ANULADO',
+  operadorId?: number
 ) => {
   return prisma.salidaCobro.findMany({
     where: {
       ...(ingresoId ? { ingresoId } : {}),
-      ...(estadoPago ? { estadoPago } : {})
+      ...(estadoPago ? { estadoPago } : {}),
+      ...(operadorId
+        ? {
+            ingreso: {
+              parqueo: {
+                operadorId
+              }
+            }
+          }
+        : {})
     },
     include: includeSalidaCobroDetalle,
     orderBy: {
@@ -104,7 +115,8 @@ export const createSalidaCobroRepository = (
       },
       include: {
         vehiculo: true,
-        espacio: true
+        espacio: true,
+        parqueo: true
       }
     });
 
@@ -114,6 +126,10 @@ export const createSalidaCobroRepository = (
 
     if (ingreso.estado !== 'ACTIVO') {
       throw new Error('INGRESO_NOT_ACTIVE');
+    }
+
+    if (operador.rol === 'OPERADOR' && ingreso.parqueo.operadorId !== operadorId) {
+      throw new Error('SALIDA_COBRO_FORBIDDEN');
     }
 
     const salidaExistente = await tx.salidaCobro.findUnique({
