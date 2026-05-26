@@ -1,50 +1,61 @@
 import { prisma } from '../../config/prisma';
 import { CreateIngresoInput } from './ingresos.types';
 
+const ingresoDetalleInclude = {
+  parqueo: {
+    select: {
+      id: true,
+      nombre: true,
+      direccion: true,
+      operadorId: true
+    }
+  },
+  espacio: {
+    select: {
+      id: true,
+      codigo: true,
+      tipo: true,
+      estado: true
+    }
+  },
+  vehiculo: {
+    select: {
+      id: true,
+      placa: true,
+      tipo: true,
+      marca: true,
+      modelo: true,
+      color: true
+    }
+  },
+  operador: {
+    select: {
+      id: true,
+      nombre: true,
+      email: true,
+      rol: true
+    }
+  }
+};
+
 export const findIngresosRepository = (
   parqueoId?: number,
-  estado?: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO'
+  estado?: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO',
+  operadorId?: number
 ) => {
   return prisma.ingreso.findMany({
     where: {
       ...(parqueoId ? { parqueoId } : {}),
-      ...(estado ? { estado } : {})
+      ...(estado ? { estado } : {}),
+      ...(operadorId
+        ? {
+            parqueo: {
+              operadorId
+            }
+          }
+        : {})
     },
-    include: {
-      parqueo: {
-        select: {
-          id: true,
-          nombre: true,
-          direccion: true
-        }
-      },
-      espacio: {
-        select: {
-          id: true,
-          codigo: true,
-          tipo: true,
-          estado: true
-        }
-      },
-      vehiculo: {
-        select: {
-          id: true,
-          placa: true,
-          tipo: true,
-          marca: true,
-          modelo: true,
-          color: true
-        }
-      },
-      operador: {
-        select: {
-          id: true,
-          nombre: true,
-          email: true,
-          rol: true
-        }
-      }
-    },
+    include: ingresoDetalleInclude,
     orderBy: {
       fechaIngreso: 'desc'
     }
@@ -56,41 +67,7 @@ export const findIngresoByIdRepository = (id: number) => {
     where: {
       id
     },
-    include: {
-      parqueo: {
-        select: {
-          id: true,
-          nombre: true,
-          direccion: true
-        }
-      },
-      espacio: {
-        select: {
-          id: true,
-          codigo: true,
-          tipo: true,
-          estado: true
-        }
-      },
-      vehiculo: {
-        select: {
-          id: true,
-          placa: true,
-          tipo: true,
-          marca: true,
-          modelo: true,
-          color: true
-        }
-      },
-      operador: {
-        select: {
-          id: true,
-          nombre: true,
-          email: true,
-          rol: true
-        }
-      }
-    }
+    include: ingresoDetalleInclude
   });
 };
 
@@ -119,8 +96,12 @@ export const createIngresoRepository = (
       }
     });
 
-    if (!parqueo) {
+    if (!parqueo || parqueo.estado !== 'ACTIVO') {
       throw new Error('PARQUEO_NOT_FOUND');
+    }
+
+    if (operador.rol === 'OPERADOR' && parqueo.operadorId !== operadorId) {
+      throw new Error('PARQUEO_FORBIDDEN');
     }
 
     const espacio = await tx.espacio.findUnique({
@@ -184,41 +165,7 @@ export const createIngresoRepository = (
       where: {
         id: ingreso.id
       },
-      include: {
-        parqueo: {
-          select: {
-            id: true,
-            nombre: true,
-            direccion: true
-          }
-        },
-        espacio: {
-          select: {
-            id: true,
-            codigo: true,
-            tipo: true,
-            estado: true
-          }
-        },
-        vehiculo: {
-          select: {
-            id: true,
-            placa: true,
-            tipo: true,
-            marca: true,
-            modelo: true,
-            color: true
-          }
-        },
-        operador: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rol: true
-          }
-        }
-      }
+      include: ingresoDetalleInclude
     });
 
     if (!ingresoDetalle) {
@@ -252,41 +199,7 @@ export const cancelarIngresoRepository = (id: number) => {
       data: {
         estado: 'CANCELADO'
       },
-      include: {
-        parqueo: {
-          select: {
-            id: true,
-            nombre: true,
-            direccion: true
-          }
-        },
-        espacio: {
-          select: {
-            id: true,
-            codigo: true,
-            tipo: true,
-            estado: true
-          }
-        },
-        vehiculo: {
-          select: {
-            id: true,
-            placa: true,
-            tipo: true,
-            marca: true,
-            modelo: true,
-            color: true
-          }
-        },
-        operador: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rol: true
-          }
-        }
-      }
+      include: ingresoDetalleInclude
     });
 
     await tx.espacio.update({

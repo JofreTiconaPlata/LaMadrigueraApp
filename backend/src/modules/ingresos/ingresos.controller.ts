@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 import {
   createIngresoSchema,
@@ -13,6 +13,21 @@ import {
   getIngresosService
 } from './ingresos.service';
 
+const ensureAuthenticated = (
+  req: AuthenticatedRequest,
+  res: Response
+): boolean => {
+  if (!req.user) {
+    res.status(401).json({
+      ok: false,
+      message: 'Usuario no autenticado'
+    });
+    return false;
+  }
+
+  return true;
+};
+
 const handleIngresoError = (error: unknown, res: Response): void => {
   if (!(error instanceof Error)) {
     res.status(500).json({
@@ -24,15 +39,17 @@ const handleIngresoError = (error: unknown, res: Response): void => {
 
   const errorMap: Record<string, { status: number; message: string }> = {
     OPERADOR_NOT_FOUND: { status: 404, message: 'Operador no encontrado' },
-    USER_NOT_ALLOWED: { status: 403, message: 'El usuario no tiene permisos de operador' },
+    USER_NOT_ALLOWED: { status: 403, message: 'El usuario no tiene permisos para ingresos' },
     PARQUEO_NOT_FOUND: { status: 404, message: 'Parqueo no encontrado' },
+    PARQUEO_FORBIDDEN: { status: 403, message: 'No puede gestionar ingresos de un parqueo ajeno' },
     ESPACIO_NOT_FOUND: { status: 404, message: 'Espacio no encontrado' },
     ESPACIO_NOT_IN_PARQUEO: { status: 400, message: 'El espacio no pertenece al parqueo indicado' },
     ESPACIO_NOT_AVAILABLE: { status: 409, message: 'El espacio no está disponible' },
     VEHICULO_NOT_FOUND: { status: 404, message: 'Vehículo no encontrado' },
     VEHICULO_ALREADY_INSIDE: { status: 409, message: 'El vehículo ya tiene un ingreso activo' },
     INGRESO_NOT_FOUND: { status: 404, message: 'Ingreso no encontrado' },
-    INGRESO_NOT_ACTIVE: { status: 409, message: 'El ingreso no está activo' }
+    INGRESO_NOT_ACTIVE: { status: 409, message: 'El ingreso no está activo' },
+    INGRESO_FORBIDDEN: { status: 403, message: 'No puede acceder o modificar ingresos de otro operador' }
   };
 
   const mappedError = errorMap[error.message];
@@ -51,7 +68,10 @@ const handleIngresoError = (error: unknown, res: Response): void => {
   });
 };
 
-export const getIngresosController = async (req: Request, res: Response): Promise<void> => {
+export const getIngresosController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   const parsedQuery = ingresosQuerySchema.safeParse(req.query);
 
   if (!parsedQuery.success) {
@@ -63,10 +83,18 @@ export const getIngresosController = async (req: Request, res: Response): Promis
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
     const ingresos = await getIngresosService(
       parsedQuery.data.parqueoId,
-      parsedQuery.data.estado
+      parsedQuery.data.estado,
+      {
+        id: req.user!.id,
+        rol: req.user!.rol
+      }
     );
 
     res.status(200).json({
@@ -79,7 +107,7 @@ export const getIngresosController = async (req: Request, res: Response): Promis
 };
 
 export const getIngresosActivosController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedQuery = ingresosQuerySchema.pick({ parqueoId: true }).safeParse(req.query);
@@ -93,8 +121,15 @@ export const getIngresosActivosController = async (
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
-    const ingresos = await getIngresosActivosService(parsedQuery.data.parqueoId);
+    const ingresos = await getIngresosActivosService(parsedQuery.data.parqueoId, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
 
     res.status(200).json({
       ok: true,
@@ -106,7 +141,7 @@ export const getIngresosActivosController = async (
 };
 
 export const getIngresoByIdController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedParams = ingresoIdParamsSchema.safeParse(req.params);
@@ -120,8 +155,15 @@ export const getIngresoByIdController = async (
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
-    const ingreso = await getIngresoByIdService(parsedParams.data.id);
+    const ingreso = await getIngresoByIdService(parsedParams.data.id, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
 
     res.status(200).json({
       ok: true,
@@ -136,11 +178,7 @@ export const createIngresoController = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({
-      ok: false,
-      message: 'Usuario no autenticado'
-    });
+  if (!ensureAuthenticated(req, res)) {
     return;
   }
 
@@ -156,7 +194,7 @@ export const createIngresoController = async (
   }
 
   try {
-    const ingreso = await createIngresoService(parsedBody.data, req.user.id);
+    const ingreso = await createIngresoService(parsedBody.data, req.user!.id);
 
     res.status(201).json({
       ok: true,
@@ -169,7 +207,7 @@ export const createIngresoController = async (
 };
 
 export const cancelarIngresoController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedParams = ingresoIdParamsSchema.safeParse(req.params);
@@ -183,8 +221,15 @@ export const cancelarIngresoController = async (
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
-    const ingreso = await cancelarIngresoService(parsedParams.data.id);
+    const ingreso = await cancelarIngresoService(parsedParams.data.id, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
 
     res.status(200).json({
       ok: true,
