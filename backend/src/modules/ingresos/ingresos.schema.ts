@@ -10,6 +10,7 @@ export const ingresosQuerySchema = z.object({
 });
 
 export const createIngresoSchema = z.object({
+  reservaId: z.coerce.number().int().positive('El id de la reserva debe ser válido').optional(),
   parqueoId: z.coerce.number().int().positive('El id del parqueo debe ser válido'),
   espacioId: z.coerce.number().int().positive('El id del espacio debe ser válido'),
   vehiculoId: z.coerce.number().int().positive('El id del vehículo debe ser válido')

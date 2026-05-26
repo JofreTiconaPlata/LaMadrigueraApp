@@ -40,6 +40,7 @@ export interface IngresoDetalleResponse extends IngresoResponse {
 }
 
 export interface CreateIngresoInput {
+  reservaId?: number;
   parqueoId: number;
   espacioId: number;
   vehiculoId: number;

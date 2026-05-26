@@ -118,10 +118,6 @@ export const createIngresoRepository = (
       throw new Error('ESPACIO_NOT_IN_PARQUEO');
     }
 
-    if (espacio.estado !== 'DISPONIBLE') {
-      throw new Error('ESPACIO_NOT_AVAILABLE');
-    }
-
     const vehiculo = await tx.vehiculo.findUnique({
       where: {
         id: input.vehiculoId
@@ -130,6 +126,46 @@ export const createIngresoRepository = (
 
     if (!vehiculo) {
       throw new Error('VEHICULO_NOT_FOUND');
+    }
+
+    if (input.reservaId) {
+      const reserva = await tx.reserva.findUnique({
+        where: {
+          id: input.reservaId
+        }
+      });
+
+      if (!reserva) {
+        throw new Error('RESERVA_NOT_FOUND');
+      }
+
+      if (reserva.estado !== 'ACTIVA') {
+        throw new Error('RESERVA_NOT_ACTIVE');
+      }
+
+      if (
+        reserva.parqueoId !== input.parqueoId ||
+        reserva.espacioId !== input.espacioId ||
+        reserva.vehiculoId !== input.vehiculoId
+      ) {
+        throw new Error('RESERVA_NOT_MATCH');
+      }
+
+      const ingresoReserva = await tx.ingreso.findFirst({
+        where: {
+          reservaId: input.reservaId
+        }
+      });
+
+      if (ingresoReserva) {
+        throw new Error('RESERVA_ALREADY_USED');
+      }
+
+      if (espacio.estado !== 'RESERVADO') {
+        throw new Error('ESPACIO_NOT_AVAILABLE');
+      }
+    } else if (espacio.estado !== 'DISPONIBLE') {
+      throw new Error('ESPACIO_NOT_AVAILABLE');
     }
 
     const ingresoActivo = await tx.ingreso.findFirst({
@@ -145,6 +181,7 @@ export const createIngresoRepository = (
 
     const ingreso = await tx.ingreso.create({
       data: {
+        reservaId: input.reservaId ?? null,
         parqueoId: input.parqueoId,
         espacioId: input.espacioId,
         vehiculoId: input.vehiculoId,
@@ -160,6 +197,17 @@ export const createIngresoRepository = (
         estado: 'OCUPADO'
       }
     });
+
+    if (input.reservaId) {
+      await tx.reserva.update({
+        where: {
+          id: input.reservaId
+        },
+        data: {
+          estado: 'COMPLETADA'
+        }
+      });
+    }
 
     const ingresoDetalle = await tx.ingreso.findUnique({
       where: {
