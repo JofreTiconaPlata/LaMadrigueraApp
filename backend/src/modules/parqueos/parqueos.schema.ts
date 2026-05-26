@@ -18,9 +18,18 @@ export const createParqueoBodySchema = z.object({
   espaciosAutos: z.coerce
     .number()
     .int()
-    .min(0, 'Los espacios para autos no pueden ser negativos'),
+    .min(0, 'Los espacios para autos no pueden ser negativos')
+    .max(20, 'Los espacios para autos no pueden superar 20'),
   espaciosMotos: z.coerce
     .number()
     .int()
     .min(0, 'Los espacios para motos no pueden ser negativos')
-});
+    .max(10, 'Los espacios para motos no pueden superar 10'),
+  qrPagoUrl: z.string().trim().url('El QR de pago debe ser una URL válida').optional()
+}).refine(
+  (data) => data.espaciosAutos + data.espaciosMotos > 0,
+  {
+    message: 'Debe existir al menos un espacio para autos o motos',
+    path: ['espaciosAutos']
+  }
+);
