@@ -12,7 +12,7 @@ class EspaciosRemoteDataSource {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.espacios,
       queryParameters: {
-        if (parqueoId != null) 'parqueoId': parqueoId,
+        'parqueoId': ?parqueoId,
       },
     );
 
