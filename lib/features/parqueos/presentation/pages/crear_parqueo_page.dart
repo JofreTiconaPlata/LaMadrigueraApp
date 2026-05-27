@@ -73,7 +73,9 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Parqueo, espacios y tarifas registrados correctamente.'),
+          content: Text(
+            'Parqueo, espacios y tarifas registrados correctamente.',
+          ),
         ),
       );
 
@@ -308,7 +310,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
               label: 'Cantidad de espacios para autos',
               icon: Icons.directions_car,
               keyboardType: TextInputType.number,
-              validator: (value) => _validarEntero(value, 'los espacios para autos'),
+              validator: (value) =>
+                  _validarEntero(value, 'los espacios para autos'),
             ),
             const SizedBox(height: 16),
             _campoTexto(
@@ -316,7 +319,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
               label: 'Cantidad de espacios para motos',
               icon: Icons.two_wheeler,
               keyboardType: TextInputType.number,
-              validator: (value) => _validarEntero(value, 'los espacios para motos'),
+              validator: (value) =>
+                  _validarEntero(value, 'los espacios para motos'),
             ),
             const SizedBox(height: 16),
             _tarifasCard(),

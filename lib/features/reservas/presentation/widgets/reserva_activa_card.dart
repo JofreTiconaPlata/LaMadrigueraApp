@@ -76,7 +76,9 @@ class _ReservaActivaCardState extends ConsumerState<ReservaActivaCard> {
 
     if (reservaId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se encontró el ID real de la reserva.')),
+        const SnackBar(
+          content: Text('No se encontró el ID real de la reserva.'),
+        ),
       );
       return;
     }
@@ -108,11 +110,20 @@ class _ReservaActivaCardState extends ConsumerState<ReservaActivaCard> {
                 _filaResumen('Parqueo', resumen.reserva.parqueo.nombre),
                 _filaResumen('Vehículo', resumen.reserva.tipoVehiculo),
                 _filaResumen('Placa', resumen.reserva.placa),
-                _filaResumen('Entrada', _formatearHora(resumen.reserva.horaEntrada)),
+                _filaResumen(
+                  'Entrada',
+                  _formatearHora(resumen.reserva.horaEntrada),
+                ),
                 _filaResumen('Salida', _formatearHora(resumen.horaSalida)),
-                _filaResumen('Tiempo total', _formatearDuracionResumen(resumen.tiempoTotal)),
+                _filaResumen(
+                  'Tiempo total',
+                  _formatearDuracionResumen(resumen.tiempoTotal),
+                ),
                 _filaResumen('Horas cobradas', '${resumen.horasCobradas}'),
-                _filaResumen('Total a pagar', '${resumen.montoTotal.toStringAsFixed(2)} Bs'),
+                _filaResumen(
+                  'Total a pagar',
+                  '${resumen.montoTotal.toStringAsFixed(2)} Bs',
+                ),
               ],
             ),
             actions: [
@@ -223,7 +234,9 @@ class _ReservaActivaCardState extends ConsumerState<ReservaActivaCard> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.stop_circle_outlined),
-              label: Text(_finalizando ? 'Finalizando...' : 'Finalizar parqueo'),
+              label: Text(
+                _finalizando ? 'Finalizando...' : 'Finalizar parqueo',
+              ),
             ),
           ),
         ],

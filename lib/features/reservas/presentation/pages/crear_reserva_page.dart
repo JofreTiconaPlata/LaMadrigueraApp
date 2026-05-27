@@ -163,7 +163,9 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
     if (reservaActual != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Ya tienes un parqueo activo. Finalízalo antes de crear otra reserva.'),
+          content: Text(
+            'Ya tienes un parqueo activo. Finalízalo antes de crear otra reserva.',
+          ),
         ),
       );
       return;
@@ -292,7 +294,9 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
             color: seleccionado ? AppTheme.primaryGreen : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: seleccionado ? AppTheme.primaryGreen : const Color(0xFFE2E8E4),
+              color: seleccionado
+                  ? AppTheme.primaryGreen
+                  : const Color(0xFFE2E8E4),
             ),
           ),
           child: Column(
@@ -337,11 +341,7 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
               icon: Icons.directions_car,
             ),
             const SizedBox(width: 12),
-            _tipoButton(
-              tipo: 'MOTO',
-              label: 'Moto',
-              icon: Icons.two_wheeler,
-            ),
+            _tipoButton(tipo: 'MOTO', label: 'Moto', icon: Icons.two_wheeler),
           ],
         ),
       ],
@@ -357,7 +357,9 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: espacio == null ? Colors.white : AppTheme.primary.withValues(alpha: 0.10),
+          color: espacio == null
+              ? Colors.white
+              : AppTheme.primary.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: espacio == null ? const Color(0xFFE2E8E4) : AppTheme.primary,
@@ -366,7 +368,9 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
         child: Row(
           children: [
             Icon(
-              espacio == null ? Icons.local_parking_outlined : Icons.check_circle,
+              espacio == null
+                  ? Icons.local_parking_outlined
+                  : Icons.check_circle,
               color: espacio == null ? Colors.black45 : AppTheme.primary,
             ),
             const SizedBox(width: 12),
@@ -581,11 +585,12 @@ class _SelectorEspacioSheet extends StatelessWidget {
                   child: GridView.builder(
                     shrinkWrap: true,
                     itemCount: disponibles.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 14,
+                        ),
                     itemBuilder: (context, index) {
                       final espacio = disponibles[index];
 
