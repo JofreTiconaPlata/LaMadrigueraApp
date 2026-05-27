@@ -71,7 +71,9 @@ export const getParqueosController = async (
       ok: true,
       data: parqueos
     });
-  } catch {
+  } catch (error) {
+    console.error('ERROR AL OBTENER PARQUEOS:', error);
+
     res.status(500).json({
       ok: false,
       message: 'Error interno al obtener parqueos'
@@ -125,6 +127,8 @@ export const getParqueoByIdController = async (
       data: parqueo
     });
   } catch (error) {
+    console.error('ERROR AL OBTENER PARQUEO POR ID:', error);
+
     if (error instanceof Error && error.message === 'PARQUEO_NOT_FOUND') {
       res.status(404).json({
         ok: false,

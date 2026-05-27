@@ -46,19 +46,21 @@ export const findParqueosByOperadorRepository = (operadorId: number) => {
   });
 };
 
-export const findParqueoByIdRepository = (id: number) => {
-  return prisma.parqueo.findUnique({
-    where: {
-      id
-    }
-  });
-};
-
-export const countParqueosActivosByOperadorRepository = (operadorId: number) => {
+export const countParqueosActivosByOperadorRepository = (
+  operadorId: number
+) => {
   return prisma.parqueo.count({
     where: {
       operadorId,
       estado: 'ACTIVO'
+    }
+  });
+};
+
+export const findParqueoByIdRepository = (id: number) => {
+  return prisma.parqueo.findUnique({
+    where: {
+      id
     }
   });
 };
@@ -95,7 +97,6 @@ export const createParqueoRepository = async (input: CreateParqueoInput) => {
     return parqueo;
   });
 };
-
 
 export const updateParqueoRepository = (
   id: number,

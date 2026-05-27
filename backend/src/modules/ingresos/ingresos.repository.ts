@@ -194,7 +194,7 @@ export const createIngresoRepository = (
         id: input.espacioId
       },
       data: {
-        estado: 'OCUPADO'
+        estado: 'DISPONIBLE'
       }
     });
 

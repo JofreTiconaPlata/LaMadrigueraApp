@@ -63,7 +63,11 @@ class AppRouter {
         );
 
       case RouteNames.espacios:
-        return MaterialPageRoute(builder: (_) => const EspaciosPage());
+        final parqueoId = (settings.arguments ?? 1) as int;
+
+        return MaterialPageRoute(
+          builder: (_) => EspaciosPage(parqueoId: parqueoId),
+        );
 
       case RouteNames.historial:
         return MaterialPageRoute(builder: (_) => const HistorialPage());
