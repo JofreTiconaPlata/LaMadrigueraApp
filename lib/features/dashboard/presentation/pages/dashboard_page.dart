@@ -167,6 +167,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _mostrarDetalleParqueo(BuildContext context, ParqueoDto parqueo) {
+    final rol = ref.read(sessionProvider)?.rol;
+    final esCliente = rol == RolEnum.cliente;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -237,24 +240,25 @@ class _HomePageState extends ConsumerState<HomePage> {
                     );
                   },
                   icon: const Icon(Icons.visibility),
-                  label: const Text('Ver espacios'),
+                  label: Text(esCliente ? 'Ver espacios' : 'Ver detalles'),
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.pushNamed(
-                      context,
-                      RouteNames.crearReserva,
-                      arguments: parqueo.toEntity(),
-                    );
-                  },
-                  icon: const Icon(Icons.timer),
-                  label: const Text('Reservar espacio'),
+              if (esCliente)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      Navigator.pushNamed(
+                        context,
+                        RouteNames.crearReserva,
+                        arguments: parqueo.toEntity(),
+                      );
+                    },
+                    icon: const Icon(Icons.timer),
+                    label: const Text('Reservar espacio'),
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -380,18 +384,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           _homeTitleByRole(usuario?.rol),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          Builder(
-            builder: (context) {
-              return IconButton(
-                icon: const Icon(Icons.person_outline),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              );
-            },
-          ),
-        ],
       ),
       bottomNavigationBar: _DashboardBottomNavigation(
         selectedIndex: _selectedBottomIndex,
