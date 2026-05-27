@@ -1,15 +1,17 @@
 import {
   CreateVehiculoBody,
   CreateVehiculoInput,
-  VehiculoResponse
+  VehiculoResponse,
 } from './vehiculos.types';
+
 import {
+  createClienteByUsuarioIdRepository,
   createVehiculoRepository,
   deleteVehiculoRepository,
   findClienteByUsuarioIdRepository,
   findVehiculoByIdRepository,
   findVehiculoByPlacaRepository,
-  findVehiculosRepository
+  findVehiculosRepository,
 } from './vehiculos.repository';
 
 type RolUsuario = 'CLIENTE' | 'OPERADOR' | 'ADMIN';
@@ -33,17 +35,20 @@ const toVehiculoResponse = (vehiculo: {
   modelo: vehiculo.modelo,
   color: vehiculo.color,
   createdAt: vehiculo.createdAt,
-  updatedAt: vehiculo.updatedAt
+  updatedAt: vehiculo.updatedAt,
 });
 
-const getClienteIdFromUsuario = async (usuarioId: number): Promise<number> => {
+const getOrCreateClienteIdFromUsuario = async (
+  usuarioId: number
+): Promise<number> => {
   const cliente = await findClienteByUsuarioIdRepository(usuarioId);
 
-  if (!cliente) {
-    throw new Error('CLIENTE_PROFILE_NOT_FOUND');
+  if (cliente) {
+    return cliente.id;
   }
 
-  return cliente.id;
+  const nuevoCliente = await createClienteByUsuarioIdRepository(usuarioId);
+  return nuevoCliente.id;
 };
 
 const assertVehiculoBelongsToCliente = async (
@@ -68,15 +73,16 @@ export const getVehiculosService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<VehiculoResponse[]> => {
   if (usuario.rol === 'CLIENTE') {
-    const authenticatedClienteId = await getClienteIdFromUsuario(usuario.id);
-    const vehiculos = await findVehiculosRepository(authenticatedClienteId);
+    const authenticatedClienteId = await getOrCreateClienteIdFromUsuario(
+      usuario.id
+    );
 
+    const vehiculos = await findVehiculosRepository(authenticatedClienteId);
     return vehiculos.map(toVehiculoResponse);
   }
 
   if (usuario.rol === 'ADMIN') {
     const vehiculos = await findVehiculosRepository(clienteId);
-
     return vehiculos.map(toVehiculoResponse);
   }
 
@@ -88,9 +94,8 @@ export const getVehiculoByIdService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<VehiculoResponse> => {
   if (usuario.rol === 'CLIENTE') {
-    const clienteId = await getClienteIdFromUsuario(usuario.id);
+    const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
     const vehiculo = await assertVehiculoBelongsToCliente(id, clienteId);
-
     return toVehiculoResponse(vehiculo);
   }
 
@@ -115,7 +120,8 @@ export const createVehiculoService = async (
     throw new Error('VEHICULO_FORBIDDEN');
   }
 
-  const clienteId = await getClienteIdFromUsuario(usuario.id);
+  const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
+
   const existingVehiculo = await findVehiculoByPlacaRepository(input.placa);
 
   if (existingVehiculo) {
@@ -124,11 +130,10 @@ export const createVehiculoService = async (
 
   const createInput: CreateVehiculoInput = {
     ...input,
-    clienteId
+    clienteId,
   };
 
   const vehiculo = await createVehiculoRepository(createInput);
-
   return toVehiculoResponse(vehiculo);
 };
 
@@ -137,11 +142,9 @@ export const deleteVehiculoService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<VehiculoResponse> => {
   if (usuario.rol === 'CLIENTE') {
-    const clienteId = await getClienteIdFromUsuario(usuario.id);
+    const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
     const vehiculo = await assertVehiculoBelongsToCliente(id, clienteId);
-
     const deletedVehiculo = await deleteVehiculoRepository(vehiculo.id);
-
     return toVehiculoResponse(deletedVehiculo);
   }
 
@@ -153,7 +156,6 @@ export const deleteVehiculoService = async (
     }
 
     const deletedVehiculo = await deleteVehiculoRepository(id);
-
     return toVehiculoResponse(deletedVehiculo);
   }
 

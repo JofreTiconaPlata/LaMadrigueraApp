@@ -1,12 +1,14 @@
 import { CreateReservaInput, ReservaResponse } from './reservas.types';
+
 import {
   cancelReservaRepository,
+  createClienteByUsuarioIdRepository,
   createReservaConEspacioRepository,
   findClienteByUsuarioIdRepository,
   findParqueoByIdRepository,
   findReservaByIdRepository,
   findReservasRepository,
-  findVehiculoByIdRepository
+  findVehiculoByIdRepository,
 } from './reservas.repository';
 
 type RolUsuario = 'CLIENTE' | 'OPERADOR' | 'ADMIN';
@@ -32,17 +34,20 @@ const toReservaResponse = (reserva: {
   fechaFin: reserva.fechaFin,
   estado: reserva.estado,
   createdAt: reserva.createdAt,
-  updatedAt: reserva.updatedAt
+  updatedAt: reserva.updatedAt,
 });
 
-const getClienteIdFromUsuario = async (usuarioId: number): Promise<number> => {
+const getOrCreateClienteIdFromUsuario = async (
+  usuarioId: number
+): Promise<number> => {
   const cliente = await findClienteByUsuarioIdRepository(usuarioId);
 
-  if (!cliente) {
-    throw new Error('CLIENTE_PROFILE_NOT_FOUND');
+  if (cliente) {
+    return cliente.id;
   }
 
-  return cliente.id;
+  const nuevoCliente = await createClienteByUsuarioIdRepository(usuarioId);
+  return nuevoCliente.id;
 };
 
 const assertReservaBelongsToCliente = async (
@@ -71,7 +76,6 @@ export const getReservasService = async (
   }
 
   const reservas = await findReservasRepository(clienteId);
-
   return reservas.map(toReservaResponse);
 };
 
@@ -82,9 +86,8 @@ export const getMisReservasService = async (
     throw new Error('RESERVA_FORBIDDEN');
   }
 
-  const clienteId = await getClienteIdFromUsuario(usuario.id);
+  const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
   const reservas = await findReservasRepository(clienteId);
-
   return reservas.map(toReservaResponse);
 };
 
@@ -93,9 +96,8 @@ export const getReservaByIdService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<ReservaResponse> => {
   if (usuario.rol === 'CLIENTE') {
-    const clienteId = await getClienteIdFromUsuario(usuario.id);
+    const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
     const reserva = await assertReservaBelongsToCliente(id, clienteId);
-
     return toReservaResponse(reserva);
   }
 
@@ -120,15 +122,11 @@ export const createReservaService = async (
     throw new Error('RESERVA_FORBIDDEN');
   }
 
-  const cliente = await findClienteByUsuarioIdRepository(usuario.id);
-
-  if (!cliente) {
-    throw new Error('CLIENTE_PROFILE_NOT_FOUND');
-  }
+  const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
 
   const vehiculo = await findVehiculoByIdRepository(input.vehiculoId);
 
-  if (!vehiculo || vehiculo.clienteId !== cliente.id) {
+  if (!vehiculo || vehiculo.clienteId !== clienteId) {
     throw new Error('VEHICULO_NOT_FOUND');
   }
 
@@ -139,7 +137,7 @@ export const createReservaService = async (
   }
 
   const reserva = await createReservaConEspacioRepository(
-    cliente.id,
+    clienteId,
     input,
     vehiculo.tipo as 'AUTO' | 'MOTO' | 'CAMIONETA'
   );
@@ -152,7 +150,7 @@ export const cancelReservaService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<ReservaResponse> => {
   if (usuario.rol === 'CLIENTE') {
-    const clienteId = await getClienteIdFromUsuario(usuario.id);
+    const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
     const reserva = await assertReservaBelongsToCliente(id, clienteId);
 
     if (reserva.estado !== 'ACTIVA' && reserva.estado !== 'PENDIENTE') {
@@ -160,7 +158,6 @@ export const cancelReservaService = async (
     }
 
     const reservaCancelada = await cancelReservaRepository(id);
-
     return toReservaResponse(reservaCancelada);
   }
 
@@ -176,7 +173,6 @@ export const cancelReservaService = async (
     }
 
     const reservaCancelada = await cancelReservaRepository(id);
-
     return toReservaResponse(reservaCancelada);
   }
 

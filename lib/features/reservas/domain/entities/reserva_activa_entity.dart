@@ -23,17 +23,23 @@ class ReservaActivaEntity {
   }
 
   int horasCobradas(DateTime horaSalida) {
-    final minutos = horaSalida.difference(horaEntrada).inMinutes;
+    final segundos = horaSalida.difference(horaEntrada).inSeconds;
 
-    if (minutos <= 0) {
+    if (segundos <= 0) {
       return 1;
     }
 
-    return (minutos / 60).ceil();
+    return (segundos / 3600).ceil();
   }
 
   double montoTotal(DateTime horaSalida) {
-    return horasCobradas(horaSalida) * parqueo.precioHora;
+    final tarifaHora = parqueo.precioHora;
+
+    if (tarifaHora <= 0) {
+      return 0;
+    }
+
+    return horasCobradas(horaSalida) * tarifaHora;
   }
 }
 

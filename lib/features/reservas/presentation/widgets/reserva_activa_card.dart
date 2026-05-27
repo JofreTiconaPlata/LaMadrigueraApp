@@ -1,30 +1,32 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
+import 'package:la_madriguera/features/reservas/data/datasources/reservas_remote_datasource.dart';
 import 'package:la_madriguera/features/reservas/domain/entities/reserva_activa_entity.dart';
 import 'package:la_madriguera/features/reservas/presentation/providers/reserva_activa_provider.dart';
+import 'package:la_madriguera/features/reservas/presentation/providers/reservas_provider.dart';
 
-class ReservaActivaCard extends StatefulWidget {
+class ReservaActivaCard extends ConsumerStatefulWidget {
   const ReservaActivaCard({super.key});
 
   @override
-  State<ReservaActivaCard> createState() => _ReservaActivaCardState();
+  ConsumerState<ReservaActivaCard> createState() => _ReservaActivaCardState();
 }
 
-class _ReservaActivaCardState extends State<ReservaActivaCard> {
+class _ReservaActivaCardState extends ConsumerState<ReservaActivaCard> {
   Timer? _timer;
   DateTime _ahora = DateTime.now();
+  bool _finalizando = false;
 
   @override
   void initState() {
     super.initState();
-
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       setState(() {
         _ahora = DateTime.now();
       });
@@ -50,7 +52,6 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
     final horas = segundosTotales ~/ 3600;
     final minutos = (segundosTotales % 3600) ~/ 60;
     final segundos = segundosTotales % 60;
-
     return '${_dosDigitos(horas)}:${_dosDigitos(minutos)}:${_dosDigitos(segundos)}';
   }
 
@@ -60,61 +61,92 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
     final minutos = (segundosTotales % 3600) ~/ 60;
     final segundos = segundosTotales % 60;
 
-    if (horas > 0) {
-      return '$horas h $minutos min $segundos s';
-    }
-
-    if (minutos > 0) {
-      return '$minutos min $segundos s';
-    }
-
+    if (horas > 0) return '$horas h $minutos min $segundos s';
+    if (minutos > 0) return '$minutos min $segundos s';
     return '$segundos s';
   }
 
   Future<void> _finalizarParqueo() async {
-    final resumen = ReservaActivaProvider.finalizarReserva();
+    final reservaActiva = ReservaActivaProvider.reservaActivaNotifier.value;
 
-    if (resumen == null || !mounted) {
+    if (reservaActiva == null || _finalizando) return;
+
+    final reservaId = int.tryParse(reservaActiva.id);
+    final parqueoId = int.tryParse(reservaActiva.parqueo.id);
+
+    if (reservaId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se encontró el ID real de la reserva.'),
+        ),
+      );
       return;
     }
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Resumen del parqueo'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _filaResumen('Parqueo', resumen.reserva.parqueo.nombre),
-              _filaResumen('Vehículo', resumen.reserva.tipoVehiculo),
-              _filaResumen('Placa', resumen.reserva.placa),
-              _filaResumen(
-                'Entrada',
-                _formatearHora(resumen.reserva.horaEntrada),
-              ),
-              _filaResumen('Salida', _formatearHora(resumen.horaSalida)),
-              _filaResumen(
-                'Tiempo total',
-                _formatearDuracionResumen(resumen.tiempoTotal),
-              ),
-              _filaResumen('Horas cobradas', '${resumen.horasCobradas}'),
-              _filaResumen(
-                'Total a pagar',
-                '${resumen.montoTotal.toStringAsFixed(2)} Bs',
+    setState(() {
+      _finalizando = true;
+    });
+
+    try {
+      await ReservasRemoteDataSource().cancelarReserva(reservaId);
+
+      if (parqueoId != null) {
+        ref.invalidate(espaciosPageProvider(parqueoId));
+      }
+      ref.invalidate(misReservasProvider);
+
+      final resumen = ReservaActivaProvider.finalizarReserva();
+      if (resumen == null || !mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Resumen del parqueo'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _filaResumen('Parqueo', resumen.reserva.parqueo.nombre),
+                _filaResumen('Vehículo', resumen.reserva.tipoVehiculo),
+                _filaResumen('Placa', resumen.reserva.placa),
+                _filaResumen(
+                  'Entrada',
+                  _formatearHora(resumen.reserva.horaEntrada),
+                ),
+                _filaResumen('Salida', _formatearHora(resumen.horaSalida)),
+                _filaResumen(
+                  'Tiempo total',
+                  _formatearDuracionResumen(resumen.tiempoTotal),
+                ),
+                _filaResumen('Horas cobradas', '${resumen.horasCobradas}'),
+                _filaResumen(
+                  'Total a pagar',
+                  '${resumen.montoTotal.toStringAsFixed(2)} Bs',
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Aceptar'),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Aceptar'),
-            ),
-          ],
-        );
-      },
-    );
+          );
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo finalizar el parqueo: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _finalizando = false;
+        });
+      }
+    }
   }
 
   Widget _filaResumen(String titulo, String valor) {
@@ -170,7 +202,7 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
           ),
           const SizedBox(height: 4),
           Text(
-            '${reserva.tipoVehiculo} � Placa ${reserva.placa}',
+            '${reserva.tipoVehiculo} • Placa ${reserva.placa}',
             style: const TextStyle(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 4),
@@ -194,9 +226,17 @@ class _ReservaActivaCardState extends State<ReservaActivaCard> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton.icon(
-              onPressed: _finalizarParqueo,
-              icon: const Icon(Icons.stop_circle_outlined),
-              label: const Text('Finalizar parqueo'),
+              onPressed: _finalizando ? null : _finalizarParqueo,
+              icon: _finalizando
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.stop_circle_outlined),
+              label: Text(
+                _finalizando ? 'Finalizando...' : 'Finalizar parqueo',
+              ),
             ),
           ),
         ],
