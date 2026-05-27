@@ -13,7 +13,7 @@ import {
   updateParqueoRepository
 } from './parqueos.repository';
 
-const MAX_PARQUEOS_POR_OPERADOR = 3;
+const MAX_PARQUEOS_POR_OPERADOR = 20;
 
 const toParqueoResponse = (parqueo: {
   id: number;
