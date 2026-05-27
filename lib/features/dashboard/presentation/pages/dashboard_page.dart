@@ -64,14 +64,34 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   List<Widget> _drawerOptionsByRole(BuildContext context, RolEnum? rol) {
-    final commonOptions = <Widget>[
-      _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
-      _drawerOption(context, Icons.history, 'Historial', RouteNames.historial),
-    ];
-
     if (rol == RolEnum.operador) {
       return [
-        _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
+        ExpansionTile(
+          leading: const Icon(Icons.person, color: AppTheme.primary),
+          title: const Text(
+            'Mi perfil',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          childrenPadding: const EdgeInsets.only(left: 12),
+          children: [
+            _drawerOption(context, Icons.badge, 'Mis datos', RouteNames.perfil),
+            _drawerOption(
+              context,
+              Icons.local_parking,
+              'Parqueo asignado',
+              RouteNames.espacios,
+            ),
+            _drawerOption(
+              context,
+              Icons.history,
+              'Historial de operaciones',
+              RouteNames.historial,
+            ),
+          ],
+        ),
         _drawerOption(
           context,
           Icons.add_location_alt,
@@ -86,29 +106,17 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         _drawerOption(
           context,
-          Icons.login,
-          'Registrar ingreso de vehículo',
+          Icons.directions_car,
+          'Gestión de vehículos',
           RouteNames.registrarIngreso,
         ),
-        _drawerOption(
-          context,
-          Icons.qr_code_scanner,
-          'Validar QR',
-          RouteNames.qrTiempo,
-        ),
-        _drawerOption(
-          context,
-          Icons.directions_car,
-          'Vehículos estacionados',
-          RouteNames.vehiculosEstacionados,
-        ),
+        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
           context,
           Icons.point_of_sale,
-          'Cobro y salida',
+          'Cobros',
           RouteNames.salidasCobros,
         ),
-        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
           context,
           Icons.history,
@@ -117,9 +125,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ];
     }
+
     if (rol == RolEnum.administrador) {
       return [
-        ...commonOptions,
+        _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
         _drawerOption(
           context,
           Icons.admin_panel_settings,
@@ -133,17 +142,17 @@ class _HomePageState extends ConsumerState<HomePage> {
           RouteNames.crearParqueo,
         ),
         _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
+        _drawerOption(
+          context,
+          Icons.history,
+          'Historial',
+          RouteNames.historial,
+        ),
       ];
     }
 
     return [
-      ...commonOptions,
-      _drawerOption(
-        context,
-        Icons.directions_car,
-        'Mis vehículos',
-        RouteNames.vehiculos,
-      ),
+      _drawerOption(context, Icons.person, 'Perfil', RouteNames.perfil),
       _drawerOption(
         context,
         Icons.event_available,
