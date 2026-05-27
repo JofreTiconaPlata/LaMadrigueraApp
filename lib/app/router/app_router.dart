@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/login_page.dart';
@@ -14,8 +14,10 @@ import 'package:la_madriguera/features/parqueos/presentation/pages/crear_parqueo
 import 'package:la_madriguera/features/perfil/presentation/pages/perfil_page.dart';
 import 'package:la_madriguera/features/qr/presentation/pages/qr_tiempo_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/pages/crear_reserva_page.dart';
+import 'package:la_madriguera/features/reservas/presentation/pages/mis_reservas_page.dart';
 import 'package:la_madriguera/features/salidas_cobros/presentation/pages/salidas_cobros_page.dart';
 import 'package:la_madriguera/features/tarifas/presentation/pages/tarifas_page.dart';
+import 'package:la_madriguera/features/vehiculos/presentation/pages/vehiculos_page.dart';
 import 'package:la_madriguera/features/vehiculos_estacionados/presentation/pages/vehiculos_estacionados_page.dart';
 
 class AppRouter {
@@ -67,6 +69,9 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => const RegistrarIngresoPage(),
         );
+
+      case RouteNames.vehiculos:
+        return MaterialPageRoute(builder: (_) => const VehiculosPage());
 
       case RouteNames.vehiculosEstacionados:
         return MaterialPageRoute(
@@ -120,6 +125,9 @@ class AppRouter {
             ),
           ),
         );
+
+      case RouteNames.misReservas:
+        return MaterialPageRoute(builder: (_) => const MisReservasPage());
 
       case RouteNames.qrTiempo:
         return MaterialPageRoute(

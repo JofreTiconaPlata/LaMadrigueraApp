@@ -1,80 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
-import 'package:la_madriguera/features/reservas/domain/entities/reserva_activa_entity.dart';
-import 'package:la_madriguera/features/reservas/presentation/providers/reserva_activa_provider.dart';
+import 'package:la_madriguera/features/reservas/data/datasources/reservas_remote_datasource.dart';
+import 'package:la_madriguera/features/vehiculos/data/models/vehiculo_dto.dart';
+import 'package:la_madriguera/features/vehiculos/presentation/providers/vehiculos_provider.dart';
 
-class CrearReservaPage extends StatefulWidget {
+class CrearReservaPage extends ConsumerStatefulWidget {
   const CrearReservaPage({super.key, required this.parqueo});
 
   final ParqueoEntity parqueo;
 
   @override
-  State<CrearReservaPage> createState() => _CrearReservaPageState();
+  ConsumerState<CrearReservaPage> createState() => _CrearReservaPageState();
 }
 
-class _CrearReservaPageState extends State<CrearReservaPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _placaController = TextEditingController();
-  final _nombreConductorController = TextEditingController();
+class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
+  int? _vehiculoId;
+  int _horasReserva = 1;
+  bool _guardando = false;
 
-  String _tipoVehiculo = 'Auto';
+  int get _parqueoId => int.parse(widget.parqueo.id);
 
-  @override
-  void dispose() {
-    _placaController.dispose();
-    _nombreConductorController.dispose();
-    super.dispose();
-  }
-
-  void _confirmarReserva() {
-    final formularioValido = _formKey.currentState?.validate() ?? false;
-
-    if (!formularioValido) {
-      return;
-    }
-
-    final reservaActual = ReservaActivaProvider.reservaActivaNotifier.value;
-
-    if (reservaActual != null) {
+  Future<void> _confirmarReserva() async {
+    if (_vehiculoId == null || _guardando) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Ya existe un parqueo activo. Finalízalo antes de iniciar otro.',
-          ),
-        ),
+        const SnackBar(content: Text('Selecciona un vehículo registrado.')),
       );
       return;
     }
 
-    final reserva = ReservaActivaEntity(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      parqueo: widget.parqueo,
-      tipoVehiculo: _tipoVehiculo,
-      placa: _placaController.text.trim().toUpperCase(),
-      nombreConductor: _nombreConductorController.text.trim(),
-      horaEntrada: DateTime.now(),
-    );
+    setState(() {
+      _guardando = true;
+    });
 
-    ReservaActivaProvider.iniciarReserva(reserva);
+    try {
+      final dataSource = ReservasRemoteDataSource();
+      final fechaInicio = DateTime.now();
+      final fechaFin = fechaInicio.add(Duration(hours: _horasReserva));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Reserva iniciada correctamente.')),
-    );
+      await dataSource.crearReserva(
+        parqueoId: _parqueoId,
+        vehiculoId: _vehiculoId!,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+      );
 
-    Navigator.pop(context);
-  }
+      if (!mounted) return;
 
-  String? _validarPlaca(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Ingresa la placa del vehículo';
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reserva creada correctamente.')),
+      );
+
+      Navigator.pop(context);
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo crear la reserva: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _guardando = false;
+        });
+      }
     }
-
-    if (value.trim().length < 3) {
-      return 'La placa debe tener al menos 3 caracteres';
-    }
-
-    return null;
   }
 
   Widget _infoParqueo() {
@@ -103,14 +94,6 @@ class _CrearReservaPageState extends State<CrearReservaPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Tarifa: ${widget.parqueo.precioHora.toStringAsFixed(2)} Bs/hora',
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
             'Espacios: ${widget.parqueo.espaciosAutos} autos, ${widget.parqueo.espaciosMotos} motos',
             style: const TextStyle(color: AppTheme.textSecondary),
           ),
@@ -119,127 +102,136 @@ class _CrearReservaPageState extends State<CrearReservaPage> {
     );
   }
 
-  Widget _opcionVehiculo({required String tipo, required IconData icono}) {
-    final seleccionado = _tipoVehiculo == tipo;
+  DropdownMenuItem<int> _vehiculoItem(VehiculoDto vehiculo) {
+    final detalles = [
+      vehiculo.tipo,
+      if (vehiculo.marca != null && vehiculo.marca!.isNotEmpty) vehiculo.marca,
+      if (vehiculo.modelo != null && vehiculo.modelo!.isNotEmpty)
+        vehiculo.modelo,
+    ].join(' · ');
 
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          setState(() {
-            _tipoVehiculo = tipo;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: seleccionado ? AppTheme.primaryGreen : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: seleccionado
-                  ? AppTheme.primaryGreen
-                  : const Color(0xFFE2E8E4),
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icono,
-                color: seleccionado ? Colors.white : AppTheme.primaryGreen,
-                size: 30,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                tipo,
-                style: TextStyle(
-                  color: seleccionado ? Colors.white : AppTheme.textPrimary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return DropdownMenuItem<int>(
+      value: vehiculo.id,
+      child: Text('${vehiculo.placa} - $detalles'),
     );
   }
 
-  Widget _selectorTipoVehiculo() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8E4)),
+  Widget _selectorHoras() {
+    return DropdownButtonFormField<int>(
+      initialValue: _horasReserva,
+      decoration: InputDecoration(
+        labelText: 'Duración estimada',
+        prefixIcon: const Icon(Icons.schedule),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Tipo de vehículo',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _opcionVehiculo(tipo: 'Auto', icono: Icons.directions_car),
-              const SizedBox(width: 12),
-              _opcionVehiculo(tipo: 'Moto', icono: Icons.two_wheeler),
-            ],
-          ),
-        ],
-      ),
+      items: const [
+        DropdownMenuItem(value: 1, child: Text('1 hora')),
+        DropdownMenuItem(value: 2, child: Text('2 horas')),
+        DropdownMenuItem(value: 3, child: Text('3 horas')),
+        DropdownMenuItem(value: 4, child: Text('4 horas')),
+      ],
+      onChanged: _guardando
+          ? null
+          : (value) {
+              if (value == null) return;
+              setState(() {
+                _horasReserva = value;
+              });
+            },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final vehiculosAsync = ref.watch(vehiculosClienteProvider);
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(title: const Text('Reservar espacio')),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            _infoParqueo(),
-            const SizedBox(height: 18),
-            _selectorTipoVehiculo(),
-            const SizedBox(height: 18),
-            TextFormField(
-              controller: _placaController,
-              textCapitalization: TextCapitalization.characters,
-              validator: _validarPlaca,
-              decoration: InputDecoration(
-                labelText: 'Placa del vehículo',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+      body: vehiculosAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
+                const SizedBox(height: 12),
+                const Text(
+                  'No se pudieron cargar tus vehículos.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _nombreConductorController,
-              decoration: InputDecoration(
-                labelText: 'Nombre del conductor (opcional)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
+                const SizedBox(height: 8),
+                Text(
+                  '$error',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
-              ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => ref.invalidate(vehiculosClienteProvider),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Reintentar'),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _confirmarReserva,
-                icon: const Icon(Icons.timer),
-                label: const Text('Iniciar cronómetro'),
-              ),
-            ),
-          ],
+          ),
         ),
+        data: (vehiculos) {
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              _infoParqueo(),
+              const SizedBox(height: 18),
+              DropdownButtonFormField<int>(
+                initialValue: _vehiculoId,
+                decoration: InputDecoration(
+                  labelText: 'Vehículo registrado',
+                  prefixIcon: const Icon(Icons.directions_car),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                items: vehiculos.map(_vehiculoItem).toList(),
+                onChanged: _guardando
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _vehiculoId = value;
+                        });
+                      },
+              ),
+              if (vehiculos.isEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Primero registra un vehículo desde el menú "Mis vehículos".',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ],
+              const SizedBox(height: 16),
+              _selectorHoras(),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _guardando || vehiculos.isEmpty
+                      ? null
+                      : _confirmarReserva,
+                  icon: _guardando
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.timer),
+                  label: Text(_guardando ? 'Reservando...' : 'Crear reserva'),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

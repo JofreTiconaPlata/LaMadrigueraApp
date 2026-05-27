@@ -1,5 +1,27 @@
 import { prisma } from '../../config/prisma';
-import { CreateParqueoInput } from './parqueos.types';
+import { CreateParqueoInput, UpdateParqueoInput } from './parqueos.types';
+
+const buildEspaciosParqueo = (
+  parqueoId: number,
+  espaciosAutos: number,
+  espaciosMotos: number
+) => {
+  const espaciosAuto = Array.from({ length: espaciosAutos }, (_, index) => ({
+    parqueoId,
+    codigo: `A${index + 1}`,
+    tipo: 'AUTO' as const,
+    estado: 'DISPONIBLE' as const
+  }));
+
+  const espaciosMoto = Array.from({ length: espaciosMotos }, (_, index) => ({
+    parqueoId,
+    codigo: `M${index + 1}`,
+    tipo: 'MOTO' as const,
+    estado: 'DISPONIBLE' as const
+  }));
+
+  return [...espaciosAuto, ...espaciosMoto];
+};
 
 export const findParqueosActivosRepository = () => {
   return prisma.parqueo.findMany({
@@ -12,6 +34,29 @@ export const findParqueosActivosRepository = () => {
   });
 };
 
+export const findParqueosByOperadorRepository = (operadorId: number) => {
+  return prisma.parqueo.findMany({
+    where: {
+      operadorId,
+      estado: 'ACTIVO'
+    },
+    orderBy: {
+      id: 'asc'
+    }
+  });
+};
+
+export const countParqueosActivosByOperadorRepository = (
+  operadorId: number
+) => {
+  return prisma.parqueo.count({
+    where: {
+      operadorId,
+      estado: 'ACTIVO'
+    }
+  });
+};
+
 export const findParqueoByIdRepository = (id: number) => {
   return prisma.parqueo.findUnique({
     where: {
@@ -20,13 +65,11 @@ export const findParqueoByIdRepository = (id: number) => {
   });
 };
 
-export const createParqueoRepository = async (
-  input: CreateParqueoInput
-) => {
+export const createParqueoRepository = async (input: CreateParqueoInput) => {
   return prisma.$transaction(async (tx) => {
-    // Crear parqueo
     const parqueo = await tx.parqueo.create({
       data: {
+        operadorId: input.operadorId,
         nombre: input.nombre,
         direccion: input.direccion,
         latitud: input.latitud,
@@ -34,35 +77,52 @@ export const createParqueoRepository = async (
         espaciosAutos: input.espaciosAutos,
         espaciosMotos: input.espaciosMotos,
         capacidadTotal: input.espaciosAutos + input.espaciosMotos,
-        estado: 'ACTIVO',
-        operadorId: input.operadorId
+        qrPagoUrl: input.qrPagoUrl ?? null,
+        estado: 'ACTIVO'
       }
     });
 
-    // Crear espacios AUTO
-    for (let i = 1; i <= input.espaciosAutos; i++) {
-      await tx.espacio.create({
-        data: {
-          parqueoId: parqueo.id,
-          codigo: `A${i}`,
-          tipo: 'AUTO',
-          estado: 'DISPONIBLE'
-        }
-      });
-    }
+    const espacios = buildEspaciosParqueo(
+      parqueo.id,
+      input.espaciosAutos,
+      input.espaciosMotos
+    );
 
-    // Crear espacios MOTO
-    for (let i = 1; i <= input.espaciosMotos; i++) {
-      await tx.espacio.create({
-        data: {
-          parqueoId: parqueo.id,
-          codigo: `M${i}`,
-          tipo: 'MOTO',
-          estado: 'DISPONIBLE'
-        }
+    if (espacios.length > 0) {
+      await tx.espacio.createMany({
+        data: espacios
       });
     }
 
     return parqueo;
+  });
+};
+
+export const updateParqueoRepository = (
+  id: number,
+  input: UpdateParqueoInput
+) => {
+  return prisma.parqueo.update({
+    where: {
+      id
+    },
+    data: {
+      ...(input.nombre !== undefined ? { nombre: input.nombre } : {}),
+      ...(input.direccion !== undefined ? { direccion: input.direccion } : {}),
+      ...(input.latitud !== undefined ? { latitud: input.latitud } : {}),
+      ...(input.longitud !== undefined ? { longitud: input.longitud } : {}),
+      ...(input.qrPagoUrl !== undefined ? { qrPagoUrl: input.qrPagoUrl } : {})
+    }
+  });
+};
+
+export const deactivateParqueoRepository = (id: number) => {
+  return prisma.parqueo.update({
+    where: {
+      id
+    },
+    data: {
+      estado: 'INACTIVO'
+    }
   });
 };

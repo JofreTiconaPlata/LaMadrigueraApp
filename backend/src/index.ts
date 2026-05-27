@@ -6,6 +6,7 @@ import { parqueosRoutes } from './modules/parqueos/parqueos.routes';
 import { espaciosRoutes } from './modules/espacios/espacios.routes';
 import { tarifasRoutes } from './modules/tarifas/tarifas.routes';
 import { vehiculosRoutes } from './modules/vehiculos/vehiculos.routes';
+import { reservasRoutes } from './modules/reservas/reservas.routes';
 import { ingresosRoutes } from './modules/ingresos/ingresos.routes';
 import { salidasCobrosRoutes } from './modules/salidas-cobros/salidas-cobros.routes';
 
@@ -32,6 +33,7 @@ app.use('/api/parqueos', parqueosRoutes);
 app.use('/api/espacios', espaciosRoutes);
 app.use('/api/tarifas', tarifasRoutes);
 app.use('/api/vehiculos', vehiculosRoutes);
+app.use('/api/reservas', reservasRoutes);
 app.use('/api/ingresos', ingresosRoutes);
 app.use('/api/salidas-cobros', salidasCobrosRoutes);
 

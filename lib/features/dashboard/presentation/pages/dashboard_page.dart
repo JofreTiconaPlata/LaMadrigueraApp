@@ -66,12 +66,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   List<Widget> _drawerOptionsByRole(BuildContext context, RolEnum? rol) {
     final commonOptions = <Widget>[
       _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
-      _drawerOption(
-        context,
-        Icons.local_parking,
-        'Disponibilidad de espacios',
-        RouteNames.espacios,
-      ),
       _drawerOption(context, Icons.history, 'Historial', RouteNames.historial),
     ];
 
@@ -144,6 +138,18 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return [
       ...commonOptions,
+      _drawerOption(
+        context,
+        Icons.directions_car,
+        'Mis vehículos',
+        RouteNames.vehiculos,
+      ),
+      _drawerOption(
+        context,
+        Icons.event_available,
+        'Mis reservas',
+        RouteNames.misReservas,
+      ),
       _drawerOption(context, Icons.qr_code_2, 'Código QR', RouteNames.qrTiempo),
     ];
   }

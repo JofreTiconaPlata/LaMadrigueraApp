@@ -1,50 +1,61 @@
 import { prisma } from '../../config/prisma';
 import { CreateIngresoInput } from './ingresos.types';
 
+const ingresoDetalleInclude = {
+  parqueo: {
+    select: {
+      id: true,
+      nombre: true,
+      direccion: true,
+      operadorId: true
+    }
+  },
+  espacio: {
+    select: {
+      id: true,
+      codigo: true,
+      tipo: true,
+      estado: true
+    }
+  },
+  vehiculo: {
+    select: {
+      id: true,
+      placa: true,
+      tipo: true,
+      marca: true,
+      modelo: true,
+      color: true
+    }
+  },
+  operador: {
+    select: {
+      id: true,
+      nombre: true,
+      email: true,
+      rol: true
+    }
+  }
+};
+
 export const findIngresosRepository = (
   parqueoId?: number,
-  estado?: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO'
+  estado?: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO',
+  operadorId?: number
 ) => {
   return prisma.ingreso.findMany({
     where: {
       ...(parqueoId ? { parqueoId } : {}),
-      ...(estado ? { estado } : {})
+      ...(estado ? { estado } : {}),
+      ...(operadorId
+        ? {
+            parqueo: {
+              operadorId
+            }
+          }
+        : {})
     },
-    include: {
-      parqueo: {
-        select: {
-          id: true,
-          nombre: true,
-          direccion: true
-        }
-      },
-      espacio: {
-        select: {
-          id: true,
-          codigo: true,
-          tipo: true,
-          estado: true
-        }
-      },
-      vehiculo: {
-        select: {
-          id: true,
-          placa: true,
-          tipo: true,
-          marca: true,
-          modelo: true,
-          color: true
-        }
-      },
-      operador: {
-        select: {
-          id: true,
-          nombre: true,
-          email: true,
-          rol: true
-        }
-      }
-    },
+    include: ingresoDetalleInclude,
     orderBy: {
       fechaIngreso: 'desc'
     }
@@ -56,41 +67,7 @@ export const findIngresoByIdRepository = (id: number) => {
     where: {
       id
     },
-    include: {
-      parqueo: {
-        select: {
-          id: true,
-          nombre: true,
-          direccion: true
-        }
-      },
-      espacio: {
-        select: {
-          id: true,
-          codigo: true,
-          tipo: true,
-          estado: true
-        }
-      },
-      vehiculo: {
-        select: {
-          id: true,
-          placa: true,
-          tipo: true,
-          marca: true,
-          modelo: true,
-          color: true
-        }
-      },
-      operador: {
-        select: {
-          id: true,
-          nombre: true,
-          email: true,
-          rol: true
-        }
-      }
-    }
+    include: ingresoDetalleInclude
   });
 };
 
@@ -119,8 +96,12 @@ export const createIngresoRepository = (
       }
     });
 
-    if (!parqueo) {
+    if (!parqueo || parqueo.estado !== 'ACTIVO') {
       throw new Error('PARQUEO_NOT_FOUND');
+    }
+
+    if (operador.rol === 'OPERADOR' && parqueo.operadorId !== operadorId) {
+      throw new Error('PARQUEO_FORBIDDEN');
     }
 
     const espacio = await tx.espacio.findUnique({
@@ -137,10 +118,6 @@ export const createIngresoRepository = (
       throw new Error('ESPACIO_NOT_IN_PARQUEO');
     }
 
-    if (espacio.estado !== 'DISPONIBLE') {
-      throw new Error('ESPACIO_NOT_AVAILABLE');
-    }
-
     const vehiculo = await tx.vehiculo.findUnique({
       where: {
         id: input.vehiculoId
@@ -149,6 +126,46 @@ export const createIngresoRepository = (
 
     if (!vehiculo) {
       throw new Error('VEHICULO_NOT_FOUND');
+    }
+
+    if (input.reservaId) {
+      const reserva = await tx.reserva.findUnique({
+        where: {
+          id: input.reservaId
+        }
+      });
+
+      if (!reserva) {
+        throw new Error('RESERVA_NOT_FOUND');
+      }
+
+      if (reserva.estado !== 'ACTIVA') {
+        throw new Error('RESERVA_NOT_ACTIVE');
+      }
+
+      if (
+        reserva.parqueoId !== input.parqueoId ||
+        reserva.espacioId !== input.espacioId ||
+        reserva.vehiculoId !== input.vehiculoId
+      ) {
+        throw new Error('RESERVA_NOT_MATCH');
+      }
+
+      const ingresoReserva = await tx.ingreso.findFirst({
+        where: {
+          reservaId: input.reservaId
+        }
+      });
+
+      if (ingresoReserva) {
+        throw new Error('RESERVA_ALREADY_USED');
+      }
+
+      if (espacio.estado !== 'RESERVADO') {
+        throw new Error('ESPACIO_NOT_AVAILABLE');
+      }
+    } else if (espacio.estado !== 'DISPONIBLE') {
+      throw new Error('ESPACIO_NOT_AVAILABLE');
     }
 
     const ingresoActivo = await tx.ingreso.findFirst({
@@ -164,6 +181,7 @@ export const createIngresoRepository = (
 
     const ingreso = await tx.ingreso.create({
       data: {
+        reservaId: input.reservaId ?? null,
         parqueoId: input.parqueoId,
         espacioId: input.espacioId,
         vehiculoId: input.vehiculoId,
@@ -180,45 +198,22 @@ export const createIngresoRepository = (
       }
     });
 
+    if (input.reservaId) {
+      await tx.reserva.update({
+        where: {
+          id: input.reservaId
+        },
+        data: {
+          estado: 'COMPLETADA'
+        }
+      });
+    }
+
     const ingresoDetalle = await tx.ingreso.findUnique({
       where: {
         id: ingreso.id
       },
-      include: {
-        parqueo: {
-          select: {
-            id: true,
-            nombre: true,
-            direccion: true
-          }
-        },
-        espacio: {
-          select: {
-            id: true,
-            codigo: true,
-            tipo: true,
-            estado: true
-          }
-        },
-        vehiculo: {
-          select: {
-            id: true,
-            placa: true,
-            tipo: true,
-            marca: true,
-            modelo: true,
-            color: true
-          }
-        },
-        operador: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rol: true
-          }
-        }
-      }
+      include: ingresoDetalleInclude
     });
 
     if (!ingresoDetalle) {
@@ -252,41 +247,7 @@ export const cancelarIngresoRepository = (id: number) => {
       data: {
         estado: 'CANCELADO'
       },
-      include: {
-        parqueo: {
-          select: {
-            id: true,
-            nombre: true,
-            direccion: true
-          }
-        },
-        espacio: {
-          select: {
-            id: true,
-            codigo: true,
-            tipo: true,
-            estado: true
-          }
-        },
-        vehiculo: {
-          select: {
-            id: true,
-            placa: true,
-            tipo: true,
-            marca: true,
-            modelo: true,
-            color: true
-          }
-        },
-        operador: {
-          select: {
-            id: true,
-            nombre: true,
-            email: true,
-            rol: true
-          }
-        }
-      }
+      include: ingresoDetalleInclude
     });
 
     await tx.espacio.update({

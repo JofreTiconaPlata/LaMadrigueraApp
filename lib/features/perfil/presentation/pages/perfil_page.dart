@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
-import 'package:la_madriguera/core/storage/local_storage_service.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
 
@@ -31,25 +30,13 @@ class PerfilPage extends ConsumerWidget {
     RolEnum? rol,
   ) {
     final commonOptions = <Widget>[
-      _option(icon: Icons.badge_outlined, title: 'Mis datos', onTap: () {}),
       _option(icon: Icons.settings, title: 'Configuración', onTap: () {}),
     ];
 
     if (rol == RolEnum.operador) {
       return [
         ...commonOptions,
-        _option(
-          icon: Icons.local_parking,
-          title: 'Parqueo asignado',
-          onTap: () {},
-        ),
-        _option(
-          icon: Icons.history,
-          title: 'Historial de operaciones',
-          onTap: () {
-            Navigator.pushNamed(context, RouteNames.historial);
-          },
-        ),
+        _option(icon: Icons.local_parking, title: 'Mi parqueo', onTap: () {}),
       ];
     }
 
@@ -68,17 +55,6 @@ class PerfilPage extends ConsumerWidget {
         },
       ),
     ];
-  }
-
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    ref.read(sessionProvider.notifier).state = null;
-    await LocalStorageService.clearToken();
-
-    if (!context.mounted) {
-      return;
-    }
-
-    Navigator.pushNamedAndRemoveUntil(context, RouteNames.login, (_) => false);
   }
 
   @override
@@ -119,12 +95,6 @@ class PerfilPage extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             ..._optionsByRole(context, ref, usuario?.rol),
-            const SizedBox(height: 8),
-            _option(
-              icon: Icons.logout,
-              title: 'Cerrar sesión',
-              onTap: () => _logout(context, ref),
-            ),
           ],
         ),
       ),

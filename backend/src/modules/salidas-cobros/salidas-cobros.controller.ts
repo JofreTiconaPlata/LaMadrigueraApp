@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 import {
   createSalidaCobroSchema,
@@ -11,6 +11,21 @@ import {
   getSalidasCobrosService
 } from './salidas-cobros.service';
 
+const ensureAuthenticated = (
+  req: AuthenticatedRequest,
+  res: Response
+): boolean => {
+  if (!req.user) {
+    res.status(401).json({
+      ok: false,
+      message: 'Usuario no autenticado'
+    });
+    return false;
+  }
+
+  return true;
+};
+
 const handleSalidaCobroError = (error: unknown, res: Response): void => {
   if (!(error instanceof Error)) {
     res.status(500).json({
@@ -22,12 +37,13 @@ const handleSalidaCobroError = (error: unknown, res: Response): void => {
 
   const errorMap: Record<string, { status: number; message: string }> = {
     OPERADOR_NOT_FOUND: { status: 404, message: 'Operador no encontrado' },
-    USER_NOT_ALLOWED: { status: 403, message: 'El usuario no tiene permisos de operador' },
+    USER_NOT_ALLOWED: { status: 403, message: 'El usuario no tiene permisos para salidas/cobros' },
     INGRESO_NOT_FOUND: { status: 404, message: 'Ingreso no encontrado' },
     INGRESO_NOT_ACTIVE: { status: 409, message: 'El ingreso no está activo' },
-    SALIDA_ALREADY_EXISTS: { status: 409, message: 'El ingreso ya tiene una salida/cobro registrada' },
-    TARIFA_NOT_FOUND: { status: 404, message: 'No existe una tarifa activa para este parqueo y tipo de vehículo' },
-    SALIDA_COBRO_NOT_FOUND: { status: 404, message: 'Salida/cobro no encontrada' }
+    SALIDA_ALREADY_EXISTS: { status: 409, message: 'Ya existe una salida/cobro para este ingreso' },
+    SALIDA_COBRO_NOT_FOUND: { status: 404, message: 'Salida/cobro no encontrada' },
+    SALIDA_COBRO_FORBIDDEN: { status: 403, message: 'No puede acceder o cobrar ingresos de otro operador' },
+    TARIFA_NOT_FOUND: { status: 404, message: 'Tarifa activa no encontrada para este vehículo' }
   };
 
   const mappedError = errorMap[error.message];
@@ -47,7 +63,7 @@ const handleSalidaCobroError = (error: unknown, res: Response): void => {
 };
 
 export const getSalidasCobrosController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedQuery = salidasCobrosQuerySchema.safeParse(req.query);
@@ -61,10 +77,18 @@ export const getSalidasCobrosController = async (
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
     const salidasCobros = await getSalidasCobrosService(
       parsedQuery.data.ingresoId,
-      parsedQuery.data.estadoPago
+      parsedQuery.data.estadoPago,
+      {
+        id: req.user!.id,
+        rol: req.user!.rol
+      }
     );
 
     res.status(200).json({
@@ -77,7 +101,7 @@ export const getSalidasCobrosController = async (
 };
 
 export const getSalidaCobroByIdController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedParams = salidaCobroIdParamsSchema.safeParse(req.params);
@@ -91,8 +115,15 @@ export const getSalidaCobroByIdController = async (
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
-    const salidaCobro = await getSalidaCobroByIdService(parsedParams.data.id);
+    const salidaCobro = await getSalidaCobroByIdService(parsedParams.data.id, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
 
     res.status(200).json({
       ok: true,
@@ -107,11 +138,7 @@ export const createSalidaCobroController = async (
   req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
-  if (!req.user) {
-    res.status(401).json({
-      ok: false,
-      message: 'Usuario no autenticado'
-    });
+  if (!ensureAuthenticated(req, res)) {
     return;
   }
 
@@ -127,7 +154,10 @@ export const createSalidaCobroController = async (
   }
 
   try {
-    const salidaCobro = await createSalidaCobroService(parsedBody.data, req.user.id);
+    const salidaCobro = await createSalidaCobroService(
+      parsedBody.data,
+      req.user!.id
+    );
 
     res.status(201).json({
       ok: true,

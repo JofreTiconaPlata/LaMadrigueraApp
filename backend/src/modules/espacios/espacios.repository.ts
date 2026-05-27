@@ -4,7 +4,29 @@ import { UpdateEstadoEspacioInput } from './espacios.types';
 export const findEspaciosRepository = (parqueoId?: number) => {
   return prisma.espacio.findMany({
     where: {
-      ...(parqueoId ? { parqueoId } : {})
+      ...(parqueoId ? { parqueoId } : {}),
+      parqueo: {
+        estado: 'ACTIVO'
+      }
+    },
+    orderBy: [
+      { parqueoId: 'asc' },
+      { codigo: 'asc' }
+    ]
+  });
+};
+
+export const findEspaciosByOperadorRepository = (
+  operadorId: number,
+  parqueoId?: number
+) => {
+  return prisma.espacio.findMany({
+    where: {
+      ...(parqueoId ? { parqueoId } : {}),
+      parqueo: {
+        operadorId,
+        estado: 'ACTIVO'
+      }
     },
     orderBy: [
       { parqueoId: 'asc' },
@@ -17,6 +39,9 @@ export const findEspacioByIdRepository = (id: number) => {
   return prisma.espacio.findUnique({
     where: {
       id
+    },
+    include: {
+      parqueo: true
     }
   });
 };
