@@ -11,9 +11,7 @@ class EspaciosRemoteDataSource {
   Future<List<EspacioDto>> getEspacios({int? parqueoId}) async {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.espacios,
-      queryParameters: {
-        'parqueoId': ?parqueoId,
-      },
+      queryParameters: {'parqueoId': ?parqueoId},
     );
 
     final data = response.data?['data'] as List<dynamic>? ?? [];

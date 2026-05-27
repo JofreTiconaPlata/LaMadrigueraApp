@@ -6,8 +6,10 @@ import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 
-final detalleParqueoProvider =
-    FutureProvider.family<ParqueoDto, int>((ref, parqueoId) async {
+final detalleParqueoProvider = FutureProvider.family<ParqueoDto, int>((
+  ref,
+  parqueoId,
+) async {
   final dataSource = ParqueosRemoteDataSource();
 
   return dataSource.getParqueoById(parqueoId);
@@ -16,36 +18,25 @@ final detalleParqueoProvider =
 class DetalleParqueoPage extends ConsumerWidget {
   final int parqueoId;
 
-  const DetalleParqueoPage({
-    super.key,
-    required this.parqueoId,
-  });
+  const DetalleParqueoPage({super.key, required this.parqueoId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final parqueoAsync = ref.watch(
-      detalleParqueoProvider(parqueoId),
-    );
+    final parqueoAsync = ref.watch(detalleParqueoProvider(parqueoId));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del parqueo'),
         actions: [
           IconButton(
-            onPressed: () => ref.invalidate(
-              detalleParqueoProvider(parqueoId),
-            ),
+            onPressed: () => ref.invalidate(detalleParqueoProvider(parqueoId)),
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: parqueoAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        error: (error, _) => Center(
-          child: Text('$error'),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('$error')),
         data: (parqueo) {
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -82,9 +73,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                 children: [
                   const Icon(Icons.directions_car),
                   const SizedBox(width: 8),
-                  Text(
-                    'Espacios para autos: ${parqueo.espaciosAutos}',
-                  ),
+                  Text('Espacios para autos: ${parqueo.espaciosAutos}'),
                 ],
               ),
 
@@ -94,9 +83,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                 children: [
                   const Icon(Icons.two_wheeler),
                   const SizedBox(width: 8),
-                  Text(
-                    'Espacios para motos: ${parqueo.espaciosMotos}',
-                  ),
+                  Text('Espacios para motos: ${parqueo.espaciosMotos}'),
                 ],
               ),
 
@@ -106,9 +93,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                 children: [
                   const Icon(Icons.local_parking),
                   const SizedBox(width: 8),
-                  Text(
-                    'Capacidad total: ${parqueo.capacidadTotal}',
-                  ),
+                  Text('Capacidad total: ${parqueo.capacidadTotal}'),
                 ],
               ),
 
@@ -131,9 +116,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => EspaciosPage(
-                          parqueoId: parqueo.id,
-                        ),
+                        builder: (_) => EspaciosPage(parqueoId: parqueo.id),
                       ),
                     );
                   },

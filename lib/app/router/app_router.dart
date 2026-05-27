@@ -31,44 +31,28 @@ class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case RouteNames.login:
-        return MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const LoginPage());
 
       case RouteNames.register:
-        return MaterialPageRoute(
-          builder: (_) => const RegisterPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const RegisterPage());
 
       case RouteNames.redirect:
-        return MaterialPageRoute(
-          builder: (_) => const RoleRedirectPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const RoleRedirectPage());
 
       case RouteNames.clienteHome:
-        return MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        );
+        return MaterialPageRoute(builder: (_) => const HomePage());
 
       case RouteNames.operadorHome:
-        return MaterialPageRoute(
-          builder: (_) => const HomePage(),
-        );
+        return MaterialPageRoute(builder: (_) => const HomePage());
 
       case RouteNames.adminHome:
-        return MaterialPageRoute(
-          builder: (_) => const AdminHomePage(),
-        );
+        return MaterialPageRoute(builder: (_) => const AdminHomePage());
 
       case RouteNames.perfil:
-        return MaterialPageRoute(
-          builder: (_) => const PerfilPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const PerfilPage());
 
       case RouteNames.registrarIngreso:
-        return MaterialPageRoute(
-          builder: (_) => const RegistrarIngresoPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const RegistrarIngresoPage());
 
       case RouteNames.vehiculos:
         return MaterialPageRoute(builder: (_) => const VehiculosPage());
@@ -78,50 +62,38 @@ class AppRouter {
           builder: (_) => const VehiculosEstacionadosPage(),
         );
 
-     case RouteNames.espacios:
-      final parqueoId = (settings.arguments ?? 1) as int;
+      case RouteNames.espacios:
+        final parqueoId = (settings.arguments ?? 1) as int;
 
-     return MaterialPageRoute(
-      builder: (_) => EspaciosPage(parqueoId: parqueoId),
-     );
+        return MaterialPageRoute(
+          builder: (_) => EspaciosPage(parqueoId: parqueoId),
+        );
 
       case RouteNames.historial:
-        return MaterialPageRoute(
-          builder: (_) => const HistorialPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const HistorialPage());
 
       case RouteNames.tarifas:
-        return MaterialPageRoute(
-          builder: (_) => const TarifasPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const TarifasPage());
 
       case RouteNames.adminDashboard:
-        return MaterialPageRoute(
-          builder: (_) => const AdminDashboardPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const AdminDashboardPage());
 
       case RouteNames.crearParqueo:
-        return MaterialPageRoute(
-          builder: (_) => const CrearParqueoPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const CrearParqueoPage());
 
       case RouteNames.crearReserva:
         final args = settings.arguments;
 
         if (args is ParqueoEntity) {
           return MaterialPageRoute(
-            builder: (_) => CrearReservaPage(
-              parqueo: args,
-            ),
+            builder: (_) => CrearReservaPage(parqueo: args),
           );
         }
 
         return MaterialPageRoute(
           builder: (_) => const Scaffold(
             body: Center(
-              child: Text(
-                'No se recibió el parqueo para reservar.',
-              ),
+              child: Text('No se recibió el parqueo para reservar.'),
             ),
           ),
         );
@@ -130,22 +102,15 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const MisReservasPage());
 
       case RouteNames.qrTiempo:
-        return MaterialPageRoute(
-          builder: (_) => const QrTiempoPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const QrTiempoPage());
 
       case RouteNames.salidasCobros:
-        return MaterialPageRoute(
-          builder: (_) => const CobroPage(),
-        );
+        return MaterialPageRoute(builder: (_) => const CobroPage());
 
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(
-              child: Text('Ruta no encontrada'),
-            ),
-          ),
+          builder: (_) =>
+              const Scaffold(body: Center(child: Text('Ruta no encontrada'))),
         );
     }
   }

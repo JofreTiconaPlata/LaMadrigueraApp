@@ -225,23 +225,21 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               SizedBox(
                 width: double.infinity,
-               child: OutlinedButton.icon(
-                 onPressed: () {
-                   Navigator.pop(sheetContext);
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
 
-                   Navigator.push(
-                    context,
-                   MaterialPageRoute(
-                    builder: (_) => EspaciosPage(
-                     parqueoId: parqueo.id,
-                   ),
-                 ),
-               );
-             },
-             icon: const Icon(Icons.visibility),
-             label: const Text('Ver espacios'),
-           ), 
-          ),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EspaciosPage(parqueoId: parqueo.id),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.visibility),
+                  label: const Text('Ver espacios'),
+                ),
+              ),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
