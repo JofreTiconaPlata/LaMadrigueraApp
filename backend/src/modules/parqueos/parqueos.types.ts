@@ -22,6 +22,8 @@ export interface CreateParqueoInput {
   longitud: number;
   espaciosAutos: number;
   espaciosMotos: number;
+  tarifaAutoHora: number;
+  tarifaMotoHora: number;
   qrPagoUrl?: string | null;
 }
 
