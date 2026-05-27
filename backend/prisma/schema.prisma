@@ -112,6 +112,7 @@ model Parqueo {
   espaciosMotos   Int           @default(0) @map("espacios_motos")
   capacidadTotal  Int           @default(0) @map("capacidad_total")
   estado          EstadoGeneral @default(ACTIVO)
+  operadorId      Int           @map("operador_id")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 

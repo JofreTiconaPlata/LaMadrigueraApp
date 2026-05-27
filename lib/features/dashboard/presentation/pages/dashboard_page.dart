@@ -15,6 +15,7 @@ import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
@@ -218,15 +219,23 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.pushNamed(context, RouteNames.espacios);
-                  },
-                  icon: const Icon(Icons.visibility),
-                  label: const Text('Ver espacios'),
-                ),
-              ),
+               child: OutlinedButton.icon(
+                 onPressed: () {
+                   Navigator.pop(sheetContext);
+
+                   Navigator.push(
+                    context,
+                   MaterialPageRoute(
+                    builder: (_) => EspaciosPage(
+                     parqueoId: parqueo.id,
+                   ),
+                 ),
+               );
+             },
+             icon: const Icon(Icons.visibility),
+             label: const Text('Ver espacios'),
+           ), 
+          ),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(

@@ -4,61 +4,47 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 
-const int parqueoDemoId = 1;
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 
-final detalleParqueoProvider = FutureProvider<ParqueoDto>((ref) async {
+final detalleParqueoProvider =
+    FutureProvider.family<ParqueoDto, int>((ref, parqueoId) async {
   final dataSource = ParqueosRemoteDataSource();
 
-  return dataSource.getParqueoById(parqueoDemoId);
+  return dataSource.getParqueoById(parqueoId);
 });
 
 class DetalleParqueoPage extends ConsumerWidget {
-  const DetalleParqueoPage({super.key});
+  final int parqueoId;
+
+  const DetalleParqueoPage({
+    super.key,
+    required this.parqueoId,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final parqueoAsync = ref.watch(detalleParqueoProvider);
+    final parqueoAsync = ref.watch(
+      detalleParqueoProvider(parqueoId),
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle del parqueo'),
         actions: [
           IconButton(
-            onPressed: () => ref.invalidate(detalleParqueoProvider),
+            onPressed: () => ref.invalidate(
+              detalleParqueoProvider(parqueoId),
+            ),
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: parqueoAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
         error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
-                const SizedBox(height: 12),
-                const Text(
-                  'No se pudo cargar el parqueo.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '$error',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(detalleParqueoProvider),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Reintentar'),
-                ),
-              ],
-            ),
-          ),
+          child: Text('$error'),
         ),
         data: (parqueo) {
           return ListView(
@@ -77,6 +63,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
+
               Text(
                 parqueo.nombre,
                 style: const TextStyle(
@@ -84,33 +71,49 @@ class DetalleParqueoPage extends ConsumerWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+
               const SizedBox(height: 8),
+
               Text(parqueo.direccion),
+
               const SizedBox(height: 18),
+
               Row(
                 children: [
                   const Icon(Icons.directions_car),
                   const SizedBox(width: 8),
-                  Text('Espacios para autos: ${parqueo.espaciosAutos}'),
+                  Text(
+                    'Espacios para autos: ${parqueo.espaciosAutos}',
+                  ),
                 ],
               ),
+
               const SizedBox(height: 10),
+
               Row(
                 children: [
                   const Icon(Icons.two_wheeler),
                   const SizedBox(width: 8),
-                  Text('Espacios para motos: ${parqueo.espaciosMotos}'),
+                  Text(
+                    'Espacios para motos: ${parqueo.espaciosMotos}',
+                  ),
                 ],
               ),
+
               const SizedBox(height: 10),
+
               Row(
                 children: [
                   const Icon(Icons.local_parking),
                   const SizedBox(width: 8),
-                  Text('Capacidad total: ${parqueo.capacidadTotal}'),
+                  Text(
+                    'Capacidad total: ${parqueo.capacidadTotal}',
+                  ),
                 ],
               ),
+
               const SizedBox(height: 10),
+
               Row(
                 children: [
                   const Icon(Icons.info_outline),
@@ -118,20 +121,23 @@ class DetalleParqueoPage extends ConsumerWidget {
                   Text('Estado: ${parqueo.estado}'),
                 ],
               ),
+
               const SizedBox(height: 28),
+
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/espacios'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EspaciosPage(
+                          parqueoId: parqueo.id,
+                        ),
+                      ),
+                    );
+                  },
                   child: const Text('Ver espacios'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/tarifas'),
-                  child: const Text('Ver tarifas'),
                 ),
               ),
             ],

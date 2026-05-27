@@ -1,19 +1,24 @@
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:flutter/material.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/espacios/data/datasources/espacios_remote_datasource.dart';
 import 'package:la_madriguera/features/espacios/data/models/espacio_dto.dart';
 
-const int parqueoDemoId = 1;
-
-final espaciosPageProvider = FutureProvider<List<EspacioDto>>((ref) async {
+final espaciosPageProvider =
+    FutureProvider.family<List<EspacioDto>, int>((ref, parqueoId) async {
   final dataSource = EspaciosRemoteDataSource();
 
-  return dataSource.getEspacios(parqueoId: parqueoDemoId);
+  return dataSource.getEspacios(parqueoId: parqueoId);
 });
 
 class EspaciosPage extends ConsumerWidget {
-  const EspaciosPage({super.key});
+  final int parqueoId;
+
+  const EspaciosPage({
+    super.key,
+    required this.parqueoId,
+  });
 
   Color _backgroundColor(EspacioDto espacio) {
     return switch (espacio.estado) {
@@ -46,51 +51,75 @@ class EspaciosPage extends ConsumerWidget {
   }
 
   IconData _iconoTipo(EspacioDto espacio) {
-    return espacio.tipo == 'MOTO' ? Icons.two_wheeler : Icons.directions_car;
+    return espacio.tipo == 'MOTO'
+        ? Icons.two_wheeler
+        : Icons.directions_car;
   }
 
-  Future<void> _recargar(WidgetRef ref) async {
-    ref.invalidate(espaciosPageProvider);
+  Future<void> _recargar(
+    WidgetRef ref,
+    int parqueoId,
+  ) async {
+    ref.invalidate(
+      espaciosPageProvider(parqueoId),
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final espaciosAsync = ref.watch(espaciosPageProvider);
+    final espaciosAsync = ref.watch(
+      espaciosPageProvider(parqueoId),
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Seleccionar espacio'),
         actions: [
           IconButton(
-            onPressed: () => ref.invalidate(espaciosPageProvider),
+            onPressed: () => ref.invalidate(
+              espaciosPageProvider(parqueoId),
+            ),
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       body: espaciosAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
         error: (error, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
+                const Icon(
+                  Icons.cloud_off,
+                  size: 56,
+                  color: Colors.redAccent,
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   'No se pudieron cargar los espacios.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '$error',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(espaciosPageProvider),
+                  onPressed: () => ref.invalidate(
+                    espaciosPageProvider(parqueoId),
+                  ),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Reintentar'),
                 ),
@@ -101,18 +130,25 @@ class EspaciosPage extends ConsumerWidget {
         data: (espacios) {
           if (espacios.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () => _recargar(ref),
+              onRefresh: () => _recargar(ref, parqueoId),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(24),
                 children: const [
                   SizedBox(height: 120),
-                  Icon(Icons.local_parking, size: 72, color: AppTheme.primary),
+                  Icon(
+                    Icons.local_parking,
+                    size: 72,
+                    color: AppTheme.primary,
+                  ),
                   SizedBox(height: 16),
                   Text(
                     'No hay espacios registrados',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -122,30 +158,37 @@ class EspaciosPage extends ConsumerWidget {
           final disponibles = espacios
               .where((espacio) => espacio.estado == 'DISPONIBLE')
               .length;
+
           final ocupados = espacios
               .where((espacio) => espacio.estado == 'OCUPADO')
               .length;
 
           return RefreshIndicator(
-            onRefresh: () => _recargar(ref),
+            onRefresh: () => _recargar(ref, parqueoId),
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
                 const Text(
                   'Espacios del parqueo',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Disponibles: $disponibles � Ocupados: $ocupados � Total: ${espacios.length}',
-                  style: const TextStyle(color: Colors.black54),
+                  'Disponibles: $disponibles • Ocupados: $ocupados • Total: ${espacios.length}',
+                  style: const TextStyle(
+                    color: Colors.black54,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: espacios.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     mainAxisSpacing: 14,
                     crossAxisSpacing: 14,
@@ -157,13 +200,18 @@ class EspaciosPage extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: _backgroundColor(espacio),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: _borderColor(espacio)),
+                        border: Border.all(
+                          color: _borderColor(espacio),
+                        ),
                       ),
                       padding: const EdgeInsets.all(8),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(_iconoTipo(espacio), color: _textColor(espacio)),
+                          Icon(
+                            _iconoTipo(espacio),
+                            color: _textColor(espacio),
+                          ),
                           const SizedBox(height: 6),
                           Text(
                             espacio.codigo,

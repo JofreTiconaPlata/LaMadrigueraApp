@@ -19,4 +19,5 @@ export interface CreateParqueoInput {
   longitud: number;
   espaciosAutos: number;
   espaciosMotos: number;
+  operadorId: number;
 }
