@@ -48,6 +48,18 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
       return;
     }
 
+    final espaciosAutos = int.parse(_autosController.text.trim());
+    final espaciosMotos = int.parse(_motosController.text.trim());
+
+    if (espaciosAutos + espaciosMotos <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debe existir al menos un espacio para autos o motos.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _guardando = true;
     });
@@ -60,8 +72,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
         direccion: _direccionController.text.trim(),
         latitud: _ubicacionSeleccionada!.latitude,
         longitud: _ubicacionSeleccionada!.longitude,
-        espaciosAutos: int.parse(_autosController.text.trim()),
-        espaciosMotos: int.parse(_motosController.text.trim()),
+        espaciosAutos: espaciosAutos,
+        espaciosMotos: espaciosMotos,
       );
 
       if (!mounted) return;
@@ -70,7 +82,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
         const SnackBar(content: Text('Parqueo registrado correctamente.')),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
 

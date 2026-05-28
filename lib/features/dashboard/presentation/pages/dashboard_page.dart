@@ -15,6 +15,7 @@ import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
+import 'package:la_madriguera/features/parqueos/presentation/pages/detalle_parqueo_page.dart';
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
@@ -56,9 +57,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onTap: () {
+      onTap: () async {
         Navigator.pop(context);
-        Navigator.pushNamed(context, route);
+
+        final result = await Navigator.pushNamed(context, route);
+
+        if (route == RouteNames.crearParqueo && result == true) {
+          ref.invalidate(parqueosDashboardProvider);
+        }
       },
     );
   }
@@ -238,15 +244,25 @@ class _HomePageState extends ConsumerState<HomePage> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(sheetContext);
 
-                    Navigator.push(
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => EspaciosPage(parqueoId: parqueo.id),
+                        builder: (_) {
+                          if (esCliente) {
+                            return EspaciosPage(parqueoId: parqueo.id);
+                          }
+
+                          return DetalleParqueoPage(parqueoId: parqueo.id);
+                        },
                       ),
                     );
+
+                    if (!esCliente && result == true) {
+                      ref.invalidate(parqueosDashboardProvider);
+                    }
                   },
                   icon: const Icon(Icons.visibility),
                   label: Text(esCliente ? 'Ver espacios' : 'Ver detalles'),
@@ -285,11 +301,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           route: RouteNames.registrarIngreso,
         ),
         _DashboardBottomItem(
-          icon: Icons.qr_code_scanner_rounded,
-          label: 'QR',
-          route: RouteNames.qrTiempo,
-        ),
-        _DashboardBottomItem(
           icon: Icons.point_of_sale_rounded,
           label: 'Cobros',
           route: RouteNames.salidasCobros,
@@ -299,21 +310,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return const [
       _DashboardBottomItem(icon: Icons.explore_rounded, label: 'Explorar'),
-      _DashboardBottomItem(
-        icon: Icons.local_parking_rounded,
-        label: 'Espacios',
-        route: RouteNames.espacios,
-      ),
-      _DashboardBottomItem(
-        icon: Icons.history_rounded,
-        label: 'Historial',
-        route: RouteNames.historial,
-      ),
-      _DashboardBottomItem(
-        icon: Icons.person_rounded,
-        label: 'Perfil',
-        route: RouteNames.perfil,
-      ),
+      _DashboardBottomItem(icon: Icons.favorite_rounded, label: 'Favoritos'),
+      _DashboardBottomItem(icon: Icons.my_location_rounded, label: 'Cercanos'),
     ];
   }
 

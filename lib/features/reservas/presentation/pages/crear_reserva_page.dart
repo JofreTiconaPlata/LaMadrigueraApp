@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart'
+    show espaciosPageProvider;
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/reservas/data/datasources/reservas_remote_datasource.dart';
 import 'package:la_madriguera/features/vehiculos/data/models/vehiculo_dto.dart';
@@ -45,6 +48,8 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
       );
+      
+      ref.invalidate(espaciosPageProvider(_parqueoId));
 
       if (!mounted) return;
 
@@ -52,7 +57,7 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
         const SnackBar(content: Text('Reserva creada correctamente.')),
       );
 
-      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, RouteNames.misReservas);
     } catch (error) {
       if (!mounted) return;
 
@@ -206,8 +211,17 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
               if (vehiculos.isEmpty) ...[
                 const SizedBox(height: 8),
                 const Text(
-                  'Primero registra un vehículo desde el menú "Mis vehículos".',
+                  'Primero registra un vehículo para poder reservar un espacio.',
                   style: TextStyle(color: Colors.redAccent),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, RouteNames.vehiculos);
+                    ref.invalidate(vehiculosClienteProvider);
+                  },
+                  icon: const Icon(Icons.directions_car),
+                  label: const Text('Registrar vehículo'),
                 ),
               ],
               const SizedBox(height: 16),

@@ -130,6 +130,10 @@ class EspaciosPage extends ConsumerWidget {
           final ocupados = espacios
               .where((espacio) => espacio.estado == 'OCUPADO')
               .length;
+          
+          final reservados = espacios
+              .where((espacio) => espacio.estado == 'RESERVADO')
+              .length;
 
           return RefreshIndicator(
             onRefresh: () => _recargar(ref, parqueoId),
@@ -142,7 +146,7 @@ class EspaciosPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Disponibles: $disponibles • Ocupados: $ocupados • Total: ${espacios.length}',
+                  'Disponibles: $disponibles • Reservados: $reservados • Ocupados: $ocupados • Total: ${espacios.length}',
                   style: const TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),
