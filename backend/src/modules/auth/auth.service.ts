@@ -80,6 +80,10 @@ export const loginUsuarioService = async (input: LoginInput): Promise<AuthRespon
     throw new Error('INVALID_CREDENTIALS');
   }
 
+  if (usuario.rol === 'ADMIN') {
+    throw new Error('ADMIN_ACCESS_DISABLED');
+  }
+
   const token = signToken({
     id: usuario.id,
     email: usuario.email,

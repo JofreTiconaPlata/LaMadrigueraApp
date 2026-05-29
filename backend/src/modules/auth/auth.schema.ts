@@ -5,7 +5,7 @@ export const registerSchema = z.object({
   email: z.string().trim().email('El email no es válido').toLowerCase(),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres'),
   telefono: z.string().trim().min(5).max(20).optional(),
-  rol: z.enum(['CLIENTE', 'OPERADOR', 'ADMIN']).default('CLIENTE')
+  rol: z.enum(['CLIENTE', 'OPERADOR']).default('CLIENTE')
 });
 
 export const loginSchema = z.object({
