@@ -57,4 +57,8 @@ class ParqueosRemoteDataSource {
     final data = response.data?['data'] as Map<String, dynamic>;
     return ParqueoDto.fromJson(data);
   }
+
+  Future<void> deleteParqueo(int id) async {
+    await _dio.delete<Map<String, dynamic>>('${ApiEndpoints.parqueos}/$id');
+  }
 }

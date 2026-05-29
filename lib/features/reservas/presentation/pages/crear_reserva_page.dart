@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/espacios/data/datasources/espacios_remote_datasource.dart';
 import 'package:la_madriguera/features/espacios/data/models/espacio_dto.dart';
-import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart'
+    show espaciosPageProvider;
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/reservas/domain/entities/reserva_activa_entity.dart';
 import 'package:la_madriguera/features/reservas/presentation/providers/reserva_activa_provider.dart';
@@ -71,7 +72,7 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
     }
 
     throw Exception(
-      'Este parqueo no tiene una tarifa activa para $_tipoVehiculo. Configura la tarifa antes de reservar.',
+      'Este parqueo no tiene una tarifa activa para $_tipoVehiculo.',
     );
   }
 
@@ -392,6 +393,55 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
     );
   }
 
+  Widget _tarifaInfoCard() {
+    final parqueoId = int.tryParse(widget.parqueo.id);
+
+    if (parqueoId == null) {
+      return const Text(
+        'No se puede obtener la tarifa porque el ID del parqueo no es válido.',
+        style: TextStyle(color: Colors.redAccent, fontSize: 12),
+      );
+    }
+
+    return FutureBuilder<double>(
+      future: _obtenerMontoHora(parqueoId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Text(
+            'Cargando tarifa...',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Text(
+            'No hay tarifa activa para $_tipoVehiculo.',
+            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+          );
+        }
+
+        final montoHora = snapshot.data ?? 0;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFB7D6B9)),
+          ),
+          child: Text(
+            'Tarifa: ${montoHora.toStringAsFixed(2)} Bs/hora',
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _selectorHoras() {
     return DropdownButtonFormField<int>(
       initialValue: _horasReserva,
@@ -431,6 +481,8 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
             _infoParqueo(),
             const SizedBox(height: 18),
             _selectorTipoVehiculo(),
+            const SizedBox(height: 14),
+            _tarifaInfoCard(),
             const SizedBox(height: 14),
             _espacioElegidoCard(),
             const SizedBox(height: 18),

@@ -27,7 +27,12 @@ const qrPagoUrlUpdateSchema = z.preprocess(
 
     return value;
   },
-  z.string().trim().url('El QR de pago debe ser una URL válida').nullable().optional()
+  z
+    .string()
+    .trim()
+    .url('El QR de pago debe ser una URL válida')
+    .nullable()
+    .optional()
 );
 
 export const parqueoIdParamsSchema = z.object({

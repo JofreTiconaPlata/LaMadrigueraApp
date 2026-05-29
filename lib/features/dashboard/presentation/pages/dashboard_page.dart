@@ -15,6 +15,7 @@ import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
+import 'package:la_madriguera/features/parqueos/presentation/pages/detalle_parqueo_page.dart';
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
@@ -56,22 +57,47 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      onTap: () {
+      onTap: () async {
         Navigator.pop(context);
-        Navigator.pushNamed(context, route);
+
+        final result = await Navigator.pushNamed(context, route);
+
+        if (route == RouteNames.crearParqueo && result == true) {
+          ref.invalidate(parqueosDashboardProvider);
+        }
       },
     );
   }
 
   List<Widget> _drawerOptionsByRole(BuildContext context, RolEnum? rol) {
-    final commonOptions = <Widget>[
-      _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
-      _drawerOption(context, Icons.history, 'Historial', RouteNames.historial),
-    ];
-
     if (rol == RolEnum.operador) {
       return [
-        _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
+        ExpansionTile(
+          leading: const Icon(Icons.person, color: AppTheme.primary),
+          title: const Text(
+            'Mi perfil',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          childrenPadding: const EdgeInsets.only(left: 12),
+          children: [
+            _drawerOption(context, Icons.badge, 'Mis datos', RouteNames.perfil),
+            _drawerOption(
+              context,
+              Icons.local_parking,
+              'Parqueo asignado',
+              RouteNames.espacios,
+            ),
+            _drawerOption(
+              context,
+              Icons.history,
+              'Historial de operaciones',
+              RouteNames.historial,
+            ),
+          ],
+        ),
         _drawerOption(
           context,
           Icons.add_location_alt,
@@ -86,29 +112,17 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         _drawerOption(
           context,
-          Icons.login,
-          'Registrar ingreso de vehículo',
+          Icons.directions_car,
+          'Gestión de vehículos',
           RouteNames.registrarIngreso,
         ),
-        _drawerOption(
-          context,
-          Icons.qr_code_scanner,
-          'Validar QR',
-          RouteNames.qrTiempo,
-        ),
-        _drawerOption(
-          context,
-          Icons.directions_car,
-          'Vehículos estacionados',
-          RouteNames.vehiculosEstacionados,
-        ),
+        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
           context,
           Icons.point_of_sale,
-          'Cobro y salida',
+          'Cobros',
           RouteNames.salidasCobros,
         ),
-        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
           context,
           Icons.history,
@@ -117,9 +131,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ];
     }
+
     if (rol == RolEnum.administrador) {
       return [
-        ...commonOptions,
+        _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
         _drawerOption(
           context,
           Icons.admin_panel_settings,
@@ -133,17 +148,17 @@ class _HomePageState extends ConsumerState<HomePage> {
           RouteNames.crearParqueo,
         ),
         _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
+        _drawerOption(
+          context,
+          Icons.history,
+          'Historial',
+          RouteNames.historial,
+        ),
       ];
     }
 
     return [
-      ...commonOptions,
-      _drawerOption(
-        context,
-        Icons.directions_car,
-        'Mis vehículos',
-        RouteNames.vehiculos,
-      ),
+      _drawerOption(context, Icons.person, 'Perfil', RouteNames.perfil),
       _drawerOption(
         context,
         Icons.event_available,
@@ -167,6 +182,9 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _mostrarDetalleParqueo(BuildContext context, ParqueoDto parqueo) {
+    final rol = ref.read(sessionProvider)?.rol;
+    final esCliente = rol == RolEnum.cliente;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -226,35 +244,46 @@ class _HomePageState extends ConsumerState<HomePage> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.pop(sheetContext);
 
-                    Navigator.push(
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => EspaciosPage(parqueoId: parqueo.id),
+                        builder: (_) {
+                          if (esCliente) {
+                            return EspaciosPage(parqueoId: parqueo.id);
+                          }
+
+                          return DetalleParqueoPage(parqueoId: parqueo.id);
+                        },
                       ),
                     );
+
+                    if (!esCliente && result == true) {
+                      ref.invalidate(parqueosDashboardProvider);
+                    }
                   },
                   icon: const Icon(Icons.visibility),
-                  label: const Text('Ver espacios'),
+                  label: Text(esCliente ? 'Ver espacios' : 'Ver detalles'),
                 ),
               ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(sheetContext);
-                    Navigator.pushNamed(
-                      context,
-                      RouteNames.crearReserva,
-                      arguments: parqueo.toEntity(),
-                    );
-                  },
-                  icon: const Icon(Icons.timer),
-                  label: const Text('Reservar espacio'),
+              if (esCliente)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(sheetContext);
+                      Navigator.pushNamed(
+                        context,
+                        RouteNames.crearReserva,
+                        arguments: parqueo.toEntity(),
+                      );
+                    },
+                    icon: const Icon(Icons.timer),
+                    label: const Text('Reservar espacio'),
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -272,11 +301,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           route: RouteNames.registrarIngreso,
         ),
         _DashboardBottomItem(
-          icon: Icons.qr_code_scanner_rounded,
-          label: 'QR',
-          route: RouteNames.qrTiempo,
-        ),
-        _DashboardBottomItem(
           icon: Icons.point_of_sale_rounded,
           label: 'Cobros',
           route: RouteNames.salidasCobros,
@@ -286,21 +310,8 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return const [
       _DashboardBottomItem(icon: Icons.explore_rounded, label: 'Explorar'),
-      _DashboardBottomItem(
-        icon: Icons.local_parking_rounded,
-        label: 'Espacios',
-        route: RouteNames.espacios,
-      ),
-      _DashboardBottomItem(
-        icon: Icons.history_rounded,
-        label: 'Historial',
-        route: RouteNames.historial,
-      ),
-      _DashboardBottomItem(
-        icon: Icons.person_rounded,
-        label: 'Perfil',
-        route: RouteNames.perfil,
-      ),
+      _DashboardBottomItem(icon: Icons.favorite_rounded, label: 'Favoritos'),
+      _DashboardBottomItem(icon: Icons.my_location_rounded, label: 'Cercanos'),
     ];
   }
 
@@ -380,18 +391,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           _homeTitleByRole(usuario?.rol),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          Builder(
-            builder: (context) {
-              return IconButton(
-                icon: const Icon(Icons.person_outline),
-                onPressed: () {
-                  Scaffold.of(context).openDrawer();
-                },
-              );
-            },
-          ),
-        ],
       ),
       bottomNavigationBar: _DashboardBottomNavigation(
         selectedIndex: _selectedBottomIndex,
