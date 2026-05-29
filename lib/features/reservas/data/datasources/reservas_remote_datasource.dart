@@ -11,17 +11,24 @@ class ReservasRemoteDataSource {
   Future<ReservaDto> crearReserva({
     required int parqueoId,
     required int vehiculoId,
+    int? espacioId,
     required DateTime fechaInicio,
     required DateTime fechaFin,
   }) async {
+    final body = <String, dynamic>{
+      'parqueoId': parqueoId,
+      'vehiculoId': vehiculoId,
+      'fechaInicio': fechaInicio.toIso8601String(),
+      'fechaFin': fechaFin.toIso8601String(),
+    };
+
+    if (espacioId != null) {
+      body['espacioId'] = espacioId;
+    }
+
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.reservas,
-      data: {
-        'parqueoId': parqueoId,
-        'vehiculoId': vehiculoId,
-        'fechaInicio': fechaInicio.toIso8601String(),
-        'fechaFin': fechaFin.toIso8601String(),
-      },
+      data: body,
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;

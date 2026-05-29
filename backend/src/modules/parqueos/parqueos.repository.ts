@@ -94,6 +94,26 @@ export const createParqueoRepository = async (input: CreateParqueoInput) => {
       });
     }
 
+    await tx.tarifa.create({
+      data: {
+        parqueoId: parqueo.id,
+        tipoVehiculo: 'AUTO',
+        montoHora: input.tarifaAutoHora,
+        montoFraccion: input.tarifaAutoHora,
+        estado: 'ACTIVO'
+      }
+    });
+
+    await tx.tarifa.create({
+      data: {
+        parqueoId: parqueo.id,
+        tipoVehiculo: 'MOTO',
+        montoHora: input.tarifaMotoHora,
+        montoFraccion: input.tarifaMotoHora,
+        estado: 'ACTIVO'
+      }
+    });
+
     return parqueo;
   });
 };

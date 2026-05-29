@@ -19,7 +19,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
   final _direccionController = TextEditingController();
   final _autosController = TextEditingController();
   final _motosController = TextEditingController();
-  final _precioController = TextEditingController();
+  final _tarifaAutoController = TextEditingController();
+  final _tarifaMotoController = TextEditingController();
 
   LatLng? _ubicacionSeleccionada;
   bool _guardando = false;
@@ -30,7 +31,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
     _direccionController.dispose();
     _autosController.dispose();
     _motosController.dispose();
-    _precioController.dispose();
+    _tarifaAutoController.dispose();
+    _tarifaMotoController.dispose();
     super.dispose();
   }
 
@@ -50,6 +52,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
 
     final espaciosAutos = int.parse(_autosController.text.trim());
     final espaciosMotos = int.parse(_motosController.text.trim());
+    final tarifaAutoHora = double.parse(_tarifaAutoController.text.trim());
+    final tarifaMotoHora = double.parse(_tarifaMotoController.text.trim());
 
     if (espaciosAutos + espaciosMotos <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,6 +78,8 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
         longitud: _ubicacionSeleccionada!.longitude,
         espaciosAutos: espaciosAutos,
         espaciosMotos: espaciosMotos,
+        tarifaAutoHora: tarifaAutoHora,
+        tarifaMotoHora: tarifaMotoHora,
       );
 
       if (!mounted) return;
@@ -276,8 +282,17 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
             ),
             const SizedBox(height: 16),
             _campoTexto(
-              controller: _precioController,
-              label: 'Precio por hora referencial',
+              controller: _tarifaAutoController,
+              label: 'Tarifa para autos (Bs/hora)',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: _validarPrecio,
+            ),
+            const SizedBox(height: 16),
+            _campoTexto(
+              controller: _tarifaMotoController,
+              label: 'Tarifa para motos (Bs/hora)',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),

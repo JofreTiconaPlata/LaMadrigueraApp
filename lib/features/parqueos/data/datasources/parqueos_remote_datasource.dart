@@ -37,6 +37,8 @@ class ParqueosRemoteDataSource {
     required double longitud,
     required int espaciosAutos,
     required int espaciosMotos,
+    required double tarifaAutoHora,
+    required double tarifaMotoHora,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.parqueos,
@@ -47,6 +49,8 @@ class ParqueosRemoteDataSource {
         'longitud': longitud,
         'espaciosAutos': espaciosAutos,
         'espaciosMotos': espaciosMotos,
+        'tarifaAutoHora': tarifaAutoHora,
+        'tarifaMotoHora': tarifaMotoHora,
       },
     );
 

@@ -27,11 +27,16 @@ const qrPagoUrlUpdateSchema = z.preprocess(
 
     return value;
   },
-  z.string().trim().url('El QR de pago debe ser una URL válida').nullable().optional()
+  z
+    .string()
+    .trim()
+    .url('El QR de pago debe ser una URL válida')
+    .nullable()
+    .optional()
 );
 
 export const parqueoIdParamsSchema = z.object({
-  id: z.coerce.number().int().positive('El id del parqueo debe ser válido')
+  id: z.coerce.number().int().positive('El id del parqueo debe ser válido'),
 });
 
 export const createParqueoBodySchema = z
@@ -56,11 +61,17 @@ export const createParqueoBodySchema = z
       .int()
       .min(0, 'Los espacios para motos no pueden ser negativos')
       .max(10, 'Los espacios para motos no pueden superar 10'),
-    qrPagoUrl: qrPagoUrlCreateSchema
+    tarifaAutoHora: z.coerce
+      .number()
+      .positive('La tarifa para autos debe ser mayor a 0'),
+    tarifaMotoHora: z.coerce
+      .number()
+      .positive('La tarifa para motos debe ser mayor a 0'),
+    qrPagoUrl: qrPagoUrlCreateSchema,
   })
   .refine((data) => data.espaciosAutos + data.espaciosMotos > 0, {
     message: 'Debe existir al menos un espacio para autos o motos',
-    path: ['espaciosAutos']
+    path: ['espaciosAutos'],
   });
 
 export const updateParqueoBodySchema = z
@@ -77,8 +88,8 @@ export const updateParqueoBodySchema = z
       .min(-180, 'La longitud debe ser válida')
       .max(180, 'La longitud debe ser válida')
       .optional(),
-    qrPagoUrl: qrPagoUrlUpdateSchema
+    qrPagoUrl: qrPagoUrlUpdateSchema,
   })
   .refine((data) => Object.keys(data).length > 0, {
-    message: 'Debe enviar al menos un campo para actualizar'
+    message: 'Debe enviar al menos un campo para actualizar',
   });
