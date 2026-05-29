@@ -3,44 +3,42 @@ import { CreateReservaInput } from './reservas.types';
 
 export const findClienteByUsuarioIdRepository = (usuarioId: number) => {
   return prisma.cliente.findUnique({
-    where: {
-      usuarioId
-    }
+    where: { usuarioId },
+  });
+};
+
+export const createClienteByUsuarioIdRepository = (usuarioId: number) => {
+  return prisma.cliente.upsert({
+    where: { usuarioId },
+    update: {},
+    create: { usuarioId },
   });
 };
 
 export const findVehiculoByIdRepository = (vehiculoId: number) => {
   return prisma.vehiculo.findUnique({
-    where: {
-      id: vehiculoId
-    }
+    where: { id: vehiculoId },
   });
 };
 
 export const findParqueoByIdRepository = (parqueoId: number) => {
   return prisma.parqueo.findUnique({
-    where: {
-      id: parqueoId
-    }
+    where: { id: parqueoId },
   });
 };
 
 export const findReservasRepository = (clienteId?: number) => {
   return prisma.reserva.findMany({
     where: {
-      ...(clienteId ? { clienteId } : {})
+      ...(clienteId ? { clienteId } : {}),
     },
-    orderBy: {
-      id: 'desc'
-    }
+    orderBy: { id: 'desc' },
   });
 };
 
 export const findReservaByIdRepository = (id: number) => {
   return prisma.reserva.findUnique({
-    where: {
-      id
-    }
+    where: { id },
   });
 };
 
@@ -50,19 +48,33 @@ export const createReservaConEspacioRepository = async (
   tipoVehiculo: 'AUTO' | 'MOTO' | 'CAMIONETA'
 ) => {
   return prisma.$transaction(async (tx) => {
-    const espacioDisponible = await tx.espacio.findFirst({
-      where: {
-        parqueoId: input.parqueoId,
-        estado: 'DISPONIBLE',
-        tipo: tipoVehiculo === 'CAMIONETA' ? 'AUTO' : tipoVehiculo,
-        parqueo: {
-          estado: 'ACTIVO'
-        }
-      },
-      orderBy: {
-        codigo: 'asc'
-      }
-    });
+    const tipoEspacio = tipoVehiculo === 'CAMIONETA' ? 'AUTO' : tipoVehiculo;
+
+    const espacioDisponible = input.espacioId
+      ? await tx.espacio.findFirst({
+          where: {
+            id: input.espacioId,
+            parqueoId: input.parqueoId,
+            estado: 'DISPONIBLE',
+            tipo: tipoEspacio,
+            parqueo: {
+              estado: 'ACTIVO',
+            },
+          },
+        })
+      : await tx.espacio.findFirst({
+          where: {
+            parqueoId: input.parqueoId,
+            estado: 'DISPONIBLE',
+            tipo: tipoEspacio,
+            parqueo: {
+              estado: 'ACTIVO',
+            },
+          },
+          orderBy: {
+            codigo: 'asc',
+          },
+        });
 
     if (!espacioDisponible) {
       throw new Error('ESPACIO_DISPONIBLE_NOT_FOUND');
@@ -76,17 +88,13 @@ export const createReservaConEspacioRepository = async (
         vehiculoId: input.vehiculoId,
         fechaInicio: input.fechaInicio,
         fechaFin: input.fechaFin,
-        estado: 'ACTIVA'
-      }
+        estado: 'ACTIVA',
+      },
     });
 
     await tx.espacio.update({
-      where: {
-        id: espacioDisponible.id
-      },
-      data: {
-        estado: 'RESERVADO'
-      }
+      where: { id: espacioDisponible.id },
+      data: { estado: 'OCUPADO' },
     });
 
     return reserva;
@@ -96,9 +104,7 @@ export const createReservaConEspacioRepository = async (
 export const cancelReservaRepository = (id: number) => {
   return prisma.$transaction(async (tx) => {
     const reserva = await tx.reserva.findUnique({
-      where: {
-        id
-      }
+      where: { id },
     });
 
     if (!reserva) {
@@ -106,22 +112,14 @@ export const cancelReservaRepository = (id: number) => {
     }
 
     const reservaCancelada = await tx.reserva.update({
-      where: {
-        id
-      },
-      data: {
-        estado: 'CANCELADA'
-      }
+      where: { id },
+      data: { estado: 'CANCELADA' },
     });
 
     if (reserva.espacioId) {
       await tx.espacio.update({
-        where: {
-          id: reserva.espacioId
-        },
-        data: {
-          estado: 'DISPONIBLE'
-        }
+        where: { id: reserva.espacioId },
+        data: { estado: 'DISPONIBLE' },
       });
     }
 

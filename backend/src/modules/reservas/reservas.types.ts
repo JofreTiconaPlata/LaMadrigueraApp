@@ -14,6 +14,7 @@ export interface ReservaResponse {
 export interface CreateReservaInput {
   parqueoId: number;
   vehiculoId: number;
+  espacioId?: number;
   fechaInicio: Date;
   fechaFin: Date;
 }

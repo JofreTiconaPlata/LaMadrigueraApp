@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 
@@ -85,7 +86,11 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Parqueo registrado correctamente.')),
+        const SnackBar(
+          content: Text(
+            'Parqueo, espacios y tarifas registrados correctamente.',
+          ),
+        ),
       );
 
       Navigator.pop(context, true);
@@ -126,15 +131,15 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
     return null;
   }
 
-  String? _validarPrecio(String? value) {
+  String? _validarTarifa(String? value, String campo) {
     if (value == null || value.trim().isEmpty) {
-      return 'Ingresa el precio por hora';
+      return 'Ingresa $campo';
     }
 
     final precio = double.tryParse(value.trim());
 
     if (precio == null || precio <= 0) {
-      return 'Ingresa un precio válido';
+      return 'Ingresa una tarifa válida mayor a 0';
     }
 
     return null;
@@ -145,6 +150,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
     required String label,
     required String? Function(String?) validator,
     TextInputType? keyboardType,
+    IconData? icon,
   }) {
     return TextFormField(
       controller: controller,
@@ -153,7 +159,53 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
       validator: validator,
       decoration: InputDecoration(
         labelText: label,
+        prefixIcon: icon == null ? null : Icon(icon),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
+
+  Widget _tarifasCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFB7D6B9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Tarifas por hora',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Estas tarifas se guardarán en la base de datos y se usarán al reservar.',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 14),
+          _campoTexto(
+            controller: _tarifaAutoController,
+            label: 'Tarifa para autos (Bs/hora)',
+            icon: Icons.directions_car,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) => _validarTarifa(value, 'la tarifa para autos'),
+          ),
+          const SizedBox(height: 14),
+          _campoTexto(
+            controller: _tarifaMotoController,
+            label: 'Tarifa para motos (Bs/hora)',
+            icon: Icons.two_wheeler,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: (value) => _validarTarifa(value, 'la tarifa para motos'),
+          ),
+        ],
       ),
     );
   }
@@ -234,7 +286,7 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
         if (_ubicacionSeleccionada != null) ...[
           const SizedBox(height: 8),
           Text(
-            'Lat: ${_ubicacionSeleccionada!.latitude.toStringAsFixed(6)}  '
+            'Lat: ${_ubicacionSeleccionada!.latitude.toStringAsFixed(6)} '
             'Lng: ${_ubicacionSeleccionada!.longitude.toStringAsFixed(6)}',
             style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
           ),
@@ -256,18 +308,21 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
             _campoTexto(
               controller: _nombreController,
               label: 'Nombre del parqueo',
+              icon: Icons.local_parking,
               validator: (value) => _validarTexto(value, 'el nombre'),
             ),
             const SizedBox(height: 16),
             _campoTexto(
               controller: _direccionController,
               label: 'Dirección o referencia',
+              icon: Icons.place,
               validator: (value) => _validarTexto(value, 'la dirección'),
             ),
             const SizedBox(height: 16),
             _campoTexto(
               controller: _autosController,
               label: 'Cantidad de espacios para autos',
+              icon: Icons.directions_car,
               keyboardType: TextInputType.number,
               validator: (value) =>
                   _validarEntero(value, 'los espacios para autos'),
@@ -276,28 +331,13 @@ class _CrearParqueoPageState extends State<CrearParqueoPage> {
             _campoTexto(
               controller: _motosController,
               label: 'Cantidad de espacios para motos',
+              icon: Icons.two_wheeler,
               keyboardType: TextInputType.number,
               validator: (value) =>
                   _validarEntero(value, 'los espacios para motos'),
             ),
             const SizedBox(height: 16),
-            _campoTexto(
-              controller: _tarifaAutoController,
-              label: 'Tarifa para autos (Bs/hora)',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              validator: _validarPrecio,
-            ),
-            const SizedBox(height: 16),
-            _campoTexto(
-              controller: _tarifaMotoController,
-              label: 'Tarifa para motos (Bs/hora)',
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              validator: _validarPrecio,
-            ),
+            _tarifasCard(),
             const SizedBox(height: 24),
             _mapaSelector(),
             const SizedBox(height: 24),

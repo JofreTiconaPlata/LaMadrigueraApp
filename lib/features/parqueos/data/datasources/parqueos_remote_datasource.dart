@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import 'package:la_madriguera/core/network/api_endpoints.dart';
 import 'package:la_madriguera/core/network/dio_client.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
@@ -26,7 +27,6 @@ class ParqueosRemoteDataSource {
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;
-
     return ParqueoDto.fromJson(data);
   }
 
@@ -55,7 +55,6 @@ class ParqueosRemoteDataSource {
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;
-
     return ParqueoDto.fromJson(data);
   }
 

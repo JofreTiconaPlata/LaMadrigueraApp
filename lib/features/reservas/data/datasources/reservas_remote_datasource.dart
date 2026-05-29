@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import 'package:la_madriguera/core/network/api_endpoints.dart';
 import 'package:la_madriguera/core/network/dio_client.dart';
 import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
@@ -32,7 +33,6 @@ class ReservasRemoteDataSource {
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;
-
     return ReservaDto.fromJson(data);
   }
 
@@ -54,7 +54,6 @@ class ReservasRemoteDataSource {
     );
 
     final data = response.data?['data'] as Map<String, dynamic>;
-
     return ReservaDto.fromJson(data);
   }
 }
