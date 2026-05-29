@@ -21,6 +21,18 @@ class ParqueosRemoteDataSource {
         .toList();
   }
 
+  Future<List<ParqueoDto>> getMisParqueos() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.misParqueos,
+    );
+
+    final data = response.data?['data'] as List<dynamic>? ?? [];
+
+    return data
+        .map((item) => ParqueoDto.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<ParqueoDto> getParqueoById(int id) async {
     final response = await _dio.get<Map<String, dynamic>>(
       '${ApiEndpoints.parqueos}/$id',
@@ -59,6 +71,6 @@ class ParqueosRemoteDataSource {
   }
 
   Future<void> deleteParqueo(int id) async {
-    await _dio.delete<Map<String, dynamic>>('${ApiEndpoints.parqueos}/$id');
+    await _dio.delete<Map<String, dynamic>>('\${ApiEndpoints.parqueos}/$id');
   }
 }

@@ -11,6 +11,7 @@ class ApiEndpoints {
   static const String authMe = '/api/auth/me';
 
   static const String parqueos = '/api/parqueos';
+  static const String misParqueos = '/api/parqueos/mios';
   static const String espacios = '/api/espacios';
   static const String tarifas = '/api/tarifas';
   static const String vehiculos = '/api/vehiculos';
