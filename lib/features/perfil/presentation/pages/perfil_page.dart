@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
-import 'package:la_madriguera/core/storage/local_storage_service.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
 
@@ -16,7 +16,7 @@ class PerfilPage extends ConsumerWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF2E7D32)),
+        leading: Icon(icon, color: AppTheme.primary),
         title: Text(title),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
@@ -24,23 +24,15 @@ class PerfilPage extends ConsumerWidget {
     );
   }
 
-  List<Widget> _optionsByRole(
-    BuildContext context,
-    WidgetRef ref,
-    RolEnum? rol,
-  ) {
-    final commonOptions = <Widget>[
-      _option(icon: Icons.badge_outlined, title: 'Mis datos', onTap: () {}),
-      _option(icon: Icons.settings, title: 'Configuración', onTap: () {}),
-    ];
-
+  List<Widget> _optionsByRole(BuildContext context, RolEnum? rol) {
     if (rol == RolEnum.operador) {
       return [
-        ...commonOptions,
         _option(
           icon: Icons.local_parking,
-          title: 'Parqueo asignado',
-          onTap: () {},
+          title: 'Mi parqueo',
+          onTap: () {
+            Navigator.pushNamed(context, RouteNames.espacios);
+          },
         ),
         _option(
           icon: Icons.history,
@@ -53,12 +45,6 @@ class PerfilPage extends ConsumerWidget {
     }
 
     return [
-      ...commonOptions,
-      _option(
-        icon: Icons.directions_car_outlined,
-        title: 'Mis vehículos',
-        onTap: () {},
-      ),
       _option(
         icon: Icons.history,
         title: 'Historial de reservas',
@@ -69,15 +55,16 @@ class PerfilPage extends ConsumerWidget {
     ];
   }
 
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    ref.read(sessionProvider.notifier).state = null;
-    await LocalStorageService.clearToken();
-
-    if (!context.mounted) {
-      return;
+  String _rolLabel(RolEnum? rol) {
+    switch (rol) {
+      case RolEnum.operador:
+        return 'Operador';
+      case RolEnum.administrador:
+        return 'Administrador';
+      case RolEnum.cliente:
+      case null:
+        return 'Cliente';
     }
-
-    Navigator.pushNamedAndRemoveUntil(context, RouteNames.login, (_) => false);
   }
 
   @override
@@ -92,7 +79,7 @@ class PerfilPage extends ConsumerWidget {
           children: [
             const CircleAvatar(
               radius: 45,
-              backgroundColor: Color(0xFF2E7D32),
+              backgroundColor: AppTheme.primary,
               child: Icon(Icons.person, color: Colors.white, size: 50),
             ),
             const SizedBox(height: 12),
@@ -109,21 +96,15 @@ class PerfilPage extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              usuario?.rol == RolEnum.operador ? 'Operador' : 'Cliente',
+              _rolLabel(usuario?.rol),
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFF2E7D32),
+                color: AppTheme.primary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 24),
-            ..._optionsByRole(context, ref, usuario?.rol),
-            const SizedBox(height: 8),
-            _option(
-              icon: Icons.logout,
-              title: 'Cerrar sesión',
-              onTap: () => _logout(context, ref),
-            ),
+            ..._optionsByRole(context, usuario?.rol),
           ],
         ),
       ),

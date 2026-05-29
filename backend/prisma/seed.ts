@@ -53,6 +53,7 @@ async function main() {
   const parqueo = await prisma.parqueo.upsert({
     where: { id: 1 },
     update: {
+      operadorId: operador.id,
       nombre: 'Parqueo Central La Madriguera',
       direccion: 'Av. América, Cochabamba',
       latitud: -17.3769000,
@@ -63,6 +64,7 @@ async function main() {
       estado: 'ACTIVO'
     },
     create: {
+      operadorId: operador.id,
       nombre: 'Parqueo Central La Madriguera',
       direccion: 'Av. América, Cochabamba',
       latitud: -17.3769000,

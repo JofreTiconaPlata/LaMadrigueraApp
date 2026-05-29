@@ -1,8 +1,9 @@
 // Prisma schema para LaMadrigueraApp Backend
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
@@ -79,6 +80,7 @@ model Usuario {
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
   cliente             Cliente?
+  parqueosOperados    Parqueo[]
   ingresosOperados    Ingreso[]     @relation("IngresoOperador")
   salidasOperadas     SalidaCobro[] @relation("SalidaOperador")
   historial           Historial[]
@@ -103,6 +105,7 @@ model Cliente {
 
 model Parqueo {
   id              Int           @id @default(autoincrement())
+  operadorId      Int           @map("operador_id")
   nombre          String
   direccion       String
   latitud         Decimal       @db.Decimal(10, 7)
@@ -110,9 +113,12 @@ model Parqueo {
   espaciosAutos   Int           @default(0) @map("espacios_autos")
   espaciosMotos   Int           @default(0) @map("espacios_motos")
   capacidadTotal  Int           @default(0) @map("capacidad_total")
+  qrPagoUrl       String?       @map("qr_pago_url")
   estado          EstadoGeneral @default(ACTIVO)
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  operador Usuario @relation(fields: [operadorId], references: [id], onDelete: Restrict)
 
   espacios Espacio[]
   tarifas  Tarifa[]

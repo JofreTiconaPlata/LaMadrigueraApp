@@ -1,30 +1,38 @@
 import { prisma } from '../../config/prisma';
 import { CreateVehiculoInput } from './vehiculos.types';
 
+export const findClienteByUsuarioIdRepository = (usuarioId: number) => {
+  return prisma.cliente.findUnique({
+    where: { usuarioId },
+  });
+};
+
+export const createClienteByUsuarioIdRepository = (usuarioId: number) => {
+  return prisma.cliente.upsert({
+    where: { usuarioId },
+    update: {},
+    create: { usuarioId },
+  });
+};
+
 export const findVehiculosRepository = (clienteId?: number) => {
   return prisma.vehiculo.findMany({
     where: {
-      ...(clienteId ? { clienteId } : {})
+      ...(clienteId ? { clienteId } : {}),
     },
-    orderBy: {
-      id: 'asc'
-    }
+    orderBy: { id: 'asc' },
   });
 };
 
 export const findVehiculoByIdRepository = (id: number) => {
   return prisma.vehiculo.findUnique({
-    where: {
-      id
-    }
+    where: { id },
   });
 };
 
 export const findVehiculoByPlacaRepository = (placa: string) => {
   return prisma.vehiculo.findUnique({
-    where: {
-      placa
-    }
+    where: { placa },
   });
 };
 
@@ -36,15 +44,13 @@ export const createVehiculoRepository = (input: CreateVehiculoInput) => {
       tipo: input.tipo,
       marca: input.marca,
       modelo: input.modelo,
-      color: input.color
-    }
+      color: input.color,
+    },
   });
 };
 
 export const deleteVehiculoRepository = (id: number) => {
   return prisma.vehiculo.delete({
-    where: {
-      id
-    }
+    where: { id },
   });
 };

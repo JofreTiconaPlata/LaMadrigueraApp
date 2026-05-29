@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:la_madriguera/features/parqueos/data/datasources/parqueos_remote_datasource.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 
@@ -13,9 +15,68 @@ final detalleParqueoProvider = FutureProvider.family<ParqueoDto, int>((
 });
 
 class DetalleParqueoPage extends ConsumerWidget {
-  const DetalleParqueoPage({required this.parqueoId, super.key});
-
   final int parqueoId;
+
+  const DetalleParqueoPage({super.key, required this.parqueoId});
+
+  Future<void> _confirmarEliminarParqueo(
+    BuildContext context,
+    WidgetRef ref,
+    int parqueoId,
+  ) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Eliminar parqueo'),
+          content: const Text(
+            '¿Seguro que deseas eliminar este parqueo? Esta acción no se puede deshacer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmado != true) {
+      return;
+    }
+
+    try {
+      final dataSource = ParqueosRemoteDataSource();
+
+      await dataSource.deleteParqueo(parqueoId);
+
+      ref.invalidate(detalleParqueoProvider(parqueoId));
+
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Parqueo eliminado correctamente.')),
+      );
+
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo eliminar el parqueo: $error')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -76,7 +137,7 @@ class DetalleParqueoPage extends ConsumerWidget {
                 child: const Icon(
                   Icons.local_parking,
                   size: 100,
-                  color: Color(0xFF2E7D32),
+                  color: AppTheme.primary,
                 ),
               ),
               const SizedBox(height: 20),
@@ -113,16 +174,30 @@ class DetalleParqueoPage extends ConsumerWidget {
               SizedBox(
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/espacios'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => EspaciosPage(parqueoId: parqueo.id),
+                      ),
+                    );
+                  },
                   child: const Text('Ver espacios'),
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 height: 52,
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pushNamed(context, '/tarifas'),
-                  child: const Text('Ver tarifas'),
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    _confirmarEliminarParqueo(context, ref, parqueo.id);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    side: const BorderSide(color: Colors.redAccent),
+                  ),
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Eliminar parqueo'),
                 ),
               ),
             ],

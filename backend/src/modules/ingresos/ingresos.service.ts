@@ -9,6 +9,8 @@ import {
   findIngresosRepository
 } from './ingresos.repository';
 
+type RolUsuario = 'CLIENTE' | 'OPERADOR' | 'ADMIN';
+
 const toIngresoDetalleResponse = (ingreso: {
   id: number;
   reservaId: number | null;
@@ -24,6 +26,7 @@ const toIngresoDetalleResponse = (ingreso: {
     id: number;
     nombre: string;
     direccion: string;
+    operadorId?: number;
   };
   espacio: {
     id: number;
@@ -56,37 +59,75 @@ const toIngresoDetalleResponse = (ingreso: {
   estado: ingreso.estado,
   createdAt: ingreso.createdAt,
   updatedAt: ingreso.updatedAt,
-  parqueo: ingreso.parqueo,
+  parqueo: {
+    id: ingreso.parqueo.id,
+    nombre: ingreso.parqueo.nombre,
+    direccion: ingreso.parqueo.direccion
+  },
   espacio: ingreso.espacio,
   vehiculo: ingreso.vehiculo,
   operador: ingreso.operador
 });
 
-export const getIngresosService = async (
-  parqueoId?: number,
-  estado?: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO'
-): Promise<IngresoDetalleResponse[]> => {
-  const ingresos = await findIngresosRepository(parqueoId, estado);
+const assertCanAccessIngreso = (
+  ingreso: {
+    parqueo: {
+      operadorId?: number;
+    };
+  },
+  usuario: { id: number; rol: RolUsuario }
+): void => {
+  if (usuario.rol === 'ADMIN') {
+    return;
+  }
 
-  return ingresos.map(toIngresoDetalleResponse);
+  if (usuario.rol !== 'OPERADOR') {
+    throw new Error('USER_NOT_ALLOWED');
+  }
+
+  if (ingreso.parqueo.operadorId !== usuario.id) {
+    throw new Error('INGRESO_FORBIDDEN');
+  }
+};
+
+export const getIngresosService = async (
+  parqueoId: number | undefined,
+  estado: 'ACTIVO' | 'FINALIZADO' | 'CANCELADO' | undefined,
+  usuario: { id: number; rol: RolUsuario }
+): Promise<IngresoDetalleResponse[]> => {
+  if (usuario.rol === 'ADMIN') {
+    const ingresos = await findIngresosRepository(parqueoId, estado);
+
+    return ingresos.map(toIngresoDetalleResponse);
+  }
+
+  if (usuario.rol === 'OPERADOR') {
+    const ingresos = await findIngresosRepository(parqueoId, estado, usuario.id);
+
+    return ingresos.map(toIngresoDetalleResponse);
+  }
+
+  throw new Error('USER_NOT_ALLOWED');
 };
 
 export const getIngresosActivosService = async (
-  parqueoId?: number
+  parqueoId: number | undefined,
+  usuario: { id: number; rol: RolUsuario }
 ): Promise<IngresoDetalleResponse[]> => {
-  const ingresos = await findIngresosRepository(parqueoId, 'ACTIVO');
-
-  return ingresos.map(toIngresoDetalleResponse);
+  return getIngresosService(parqueoId, 'ACTIVO', usuario);
 };
 
 export const getIngresoByIdService = async (
-  id: number
+  id: number,
+  usuario: { id: number; rol: RolUsuario }
 ): Promise<IngresoDetalleResponse> => {
   const ingreso = await findIngresoByIdRepository(id);
 
   if (!ingreso) {
     throw new Error('INGRESO_NOT_FOUND');
   }
+
+  assertCanAccessIngreso(ingreso, usuario);
 
   return toIngresoDetalleResponse(ingreso);
 };
@@ -101,9 +142,18 @@ export const createIngresoService = async (
 };
 
 export const cancelarIngresoService = async (
-  id: number
+  id: number,
+  usuario: { id: number; rol: RolUsuario }
 ): Promise<IngresoDetalleResponse> => {
-  const ingreso = await cancelarIngresoRepository(id);
+  const ingreso = await findIngresoByIdRepository(id);
 
-  return toIngresoDetalleResponse(ingreso);
+  if (!ingreso) {
+    throw new Error('INGRESO_NOT_FOUND');
+  }
+
+  assertCanAccessIngreso(ingreso, usuario);
+
+  const ingresoCancelado = await cancelarIngresoRepository(id);
+
+  return toIngresoDetalleResponse(ingresoCancelado);
 };

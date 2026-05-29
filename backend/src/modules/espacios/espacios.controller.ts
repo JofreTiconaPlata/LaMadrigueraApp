@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 import {
   espacioIdParamsSchema,
   espaciosQuerySchema,
@@ -10,7 +11,48 @@ import {
   updateEstadoEspacioService
 } from './espacios.service';
 
-export const getEspaciosController = async (req: Request, res: Response): Promise<void> => {
+const ensureAuthenticated = (
+  req: AuthenticatedRequest,
+  res: Response
+): boolean => {
+  if (!req.user) {
+    res.status(401).json({
+      ok: false,
+      message: 'Usuario no autenticado'
+    });
+    return false;
+  }
+
+  return true;
+};
+
+const handleEspacioAccessError = (
+  error: unknown,
+  res: Response
+): boolean => {
+  if (error instanceof Error && error.message === 'ESPACIO_NOT_FOUND') {
+    res.status(404).json({
+      ok: false,
+      message: 'Espacio no encontrado'
+    });
+    return true;
+  }
+
+  if (error instanceof Error && error.message === 'ESPACIO_FORBIDDEN') {
+    res.status(403).json({
+      ok: false,
+      message: 'No puede acceder o modificar espacios de otro operador'
+    });
+    return true;
+  }
+
+  return false;
+};
+
+export const getEspaciosController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   const parsedQuery = espaciosQuerySchema.safeParse(req.query);
 
   if (!parsedQuery.success) {
@@ -22,14 +64,25 @@ export const getEspaciosController = async (req: Request, res: Response): Promis
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
-    const espacios = await getEspaciosService(parsedQuery.data.parqueoId);
+    const espacios = await getEspaciosService(parsedQuery.data.parqueoId, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
 
     res.status(200).json({
       ok: true,
       data: espacios
     });
-  } catch {
+  } catch (error) {
+    if (handleEspacioAccessError(error, res)) {
+      return;
+    }
+
     res.status(500).json({
       ok: false,
       message: 'Error interno al obtener espacios'
@@ -37,7 +90,10 @@ export const getEspaciosController = async (req: Request, res: Response): Promis
   }
 };
 
-export const getEspacioByIdController = async (req: Request, res: Response): Promise<void> => {
+export const getEspacioByIdController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
   const parsedParams = espacioIdParamsSchema.safeParse(req.params);
 
   if (!parsedParams.success) {
@@ -49,19 +105,22 @@ export const getEspacioByIdController = async (req: Request, res: Response): Pro
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
-    const espacio = await getEspacioByIdService(parsedParams.data.id);
+    const espacio = await getEspacioByIdService(parsedParams.data.id, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
 
     res.status(200).json({
       ok: true,
       data: espacio
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'ESPACIO_NOT_FOUND') {
-      res.status(404).json({
-        ok: false,
-        message: 'Espacio no encontrado'
-      });
+    if (handleEspacioAccessError(error, res)) {
       return;
     }
 
@@ -73,7 +132,7 @@ export const getEspacioByIdController = async (req: Request, res: Response): Pro
 };
 
 export const updateEstadoEspacioController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ): Promise<void> => {
   const parsedParams = espacioIdParamsSchema.safeParse(req.params);
@@ -97,10 +156,18 @@ export const updateEstadoEspacioController = async (
     return;
   }
 
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
   try {
     const espacio = await updateEstadoEspacioService(
       parsedParams.data.id,
-      parsedBody.data
+      parsedBody.data,
+      {
+        id: req.user!.id,
+        rol: req.user!.rol
+      }
     );
 
     res.status(200).json({
@@ -109,11 +176,7 @@ export const updateEstadoEspacioController = async (
       data: espacio
     });
   } catch (error) {
-    if (error instanceof Error && error.message === 'ESPACIO_NOT_FOUND') {
-      res.status(404).json({
-        ok: false,
-        message: 'Espacio no encontrado'
-      });
+    if (handleEspacioAccessError(error, res)) {
       return;
     }
 

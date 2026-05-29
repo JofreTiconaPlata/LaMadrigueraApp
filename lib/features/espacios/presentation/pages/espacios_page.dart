@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/espacios/data/datasources/espacios_remote_datasource.dart';
 import 'package:la_madriguera/features/espacios/data/models/espacio_dto.dart';
 
-const int parqueoDemoId = 1;
-
-final espaciosPageProvider = FutureProvider<List<EspacioDto>>((ref) async {
+final espaciosPageProvider = FutureProvider.family<List<EspacioDto>, int>((
+  ref,
+  parqueoId,
+) async {
   final dataSource = EspaciosRemoteDataSource();
 
-  return dataSource.getEspacios(parqueoId: parqueoDemoId);
+  return dataSource.getEspacios(parqueoId: parqueoId);
 });
 
 class EspaciosPage extends ConsumerWidget {
-  const EspaciosPage({super.key});
+  final int parqueoId;
+
+  const EspaciosPage({super.key, required this.parqueoId});
 
   Color _backgroundColor(EspacioDto espacio) {
     return switch (espacio.estado) {
-      'DISPONIBLE' => Colors.green.shade100,
+      'DISPONIBLE' => AppTheme.primary.withValues(alpha: 0.12),
       'OCUPADO' => Colors.red.shade100,
       'RESERVADO' => Colors.orange.shade100,
       'MANTENIMIENTO' => Colors.grey.shade300,
@@ -26,7 +30,7 @@ class EspaciosPage extends ConsumerWidget {
 
   Color _borderColor(EspacioDto espacio) {
     return switch (espacio.estado) {
-      'DISPONIBLE' => Colors.green,
+      'DISPONIBLE' => AppTheme.primary,
       'OCUPADO' => Colors.red,
       'RESERVADO' => Colors.orange,
       'MANTENIMIENTO' => Colors.grey,
@@ -36,7 +40,7 @@ class EspaciosPage extends ConsumerWidget {
 
   Color _textColor(EspacioDto espacio) {
     return switch (espacio.estado) {
-      'DISPONIBLE' => Colors.green.shade800,
+      'DISPONIBLE' => AppTheme.primary,
       'OCUPADO' => Colors.red,
       'RESERVADO' => Colors.orange.shade800,
       'MANTENIMIENTO' => Colors.grey.shade800,
@@ -48,20 +52,20 @@ class EspaciosPage extends ConsumerWidget {
     return espacio.tipo == 'MOTO' ? Icons.two_wheeler : Icons.directions_car;
   }
 
-  Future<void> _recargar(WidgetRef ref) async {
-    ref.invalidate(espaciosPageProvider);
+  Future<void> _recargar(WidgetRef ref, int parqueoId) async {
+    ref.invalidate(espaciosPageProvider(parqueoId));
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final espaciosAsync = ref.watch(espaciosPageProvider);
+    final espaciosAsync = ref.watch(espaciosPageProvider(parqueoId));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Seleccionar espacio'),
         actions: [
           IconButton(
-            onPressed: () => ref.invalidate(espaciosPageProvider),
+            onPressed: () => ref.invalidate(espaciosPageProvider(parqueoId)),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -89,7 +93,8 @@ class EspaciosPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
-                  onPressed: () => ref.invalidate(espaciosPageProvider),
+                  onPressed: () =>
+                      ref.invalidate(espaciosPageProvider(parqueoId)),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Reintentar'),
                 ),
@@ -100,13 +105,13 @@ class EspaciosPage extends ConsumerWidget {
         data: (espacios) {
           if (espacios.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () => _recargar(ref),
+              onRefresh: () => _recargar(ref, parqueoId),
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(24),
                 children: const [
                   SizedBox(height: 120),
-                  Icon(Icons.local_parking, size: 72, color: Color(0xFF2E7D32)),
+                  Icon(Icons.local_parking, size: 72, color: AppTheme.primary),
                   SizedBox(height: 16),
                   Text(
                     'No hay espacios registrados',
@@ -121,12 +126,17 @@ class EspaciosPage extends ConsumerWidget {
           final disponibles = espacios
               .where((espacio) => espacio.estado == 'DISPONIBLE')
               .length;
+
           final ocupados = espacios
               .where((espacio) => espacio.estado == 'OCUPADO')
               .length;
 
+          final reservados = espacios
+              .where((espacio) => espacio.estado == 'RESERVADO')
+              .length;
+
           return RefreshIndicator(
-            onRefresh: () => _recargar(ref),
+            onRefresh: () => _recargar(ref, parqueoId),
             child: ListView(
               padding: const EdgeInsets.all(20),
               children: [
@@ -136,7 +146,7 @@ class EspaciosPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Disponibles: $disponibles • Ocupados: $ocupados • Total: ${espacios.length}',
+                  'Disponibles: $disponibles • Reservados: $reservados • Ocupados: $ocupados • Total: ${espacios.length}',
                   style: const TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 16),

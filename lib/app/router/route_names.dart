@@ -9,6 +9,7 @@ class RouteNames {
 
   static const String perfil = '/perfil';
   static const String registrarIngreso = '/registrar-ingreso';
+  static const String vehiculos = '/vehiculos';
   static const String vehiculosEstacionados = '/vehiculos-estacionados';
   static const String espacios = '/espacios';
   static const String historial = '/historial';
@@ -17,6 +18,7 @@ class RouteNames {
   static const String crearParqueo = '/crear-parqueo';
   static const String detalleParqueo = '/detalle-parqueo';
   static const String crearReserva = '/crear-reserva';
+  static const String misReservas = '/mis-reservas';
   static const String qrTiempo = '/qr-tiempo';
   static const String salidasCobros = '/salidas-cobros';
 }

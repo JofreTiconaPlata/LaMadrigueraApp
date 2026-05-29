@@ -4,9 +4,12 @@ import {
 } from './espacios.types';
 import {
   findEspacioByIdRepository,
+  findEspaciosByOperadorRepository,
   findEspaciosRepository,
   updateEstadoEspacioRepository
 } from './espacios.repository';
+
+type RolUsuario = 'CLIENTE' | 'OPERADOR' | 'ADMIN';
 
 const toEspacioResponse = (espacio: {
   id: number;
@@ -27,20 +30,32 @@ const toEspacioResponse = (espacio: {
 });
 
 export const getEspaciosService = async (
-  parqueoId?: number
+  parqueoId: number | undefined,
+  usuario: { id: number; rol: RolUsuario }
 ): Promise<EspacioResponse[]> => {
-  const espacios = await findEspaciosRepository(parqueoId);
+  const espacios =
+    usuario.rol === 'OPERADOR'
+      ? await findEspaciosByOperadorRepository(usuario.id, parqueoId)
+      : await findEspaciosRepository(parqueoId);
 
   return espacios.map(toEspacioResponse);
 };
 
 export const getEspacioByIdService = async (
-  id: number
+  id: number,
+  usuario: { id: number; rol: RolUsuario }
 ): Promise<EspacioResponse> => {
   const espacio = await findEspacioByIdRepository(id);
 
-  if (!espacio) {
+  if (!espacio || espacio.parqueo.estado !== 'ACTIVO') {
     throw new Error('ESPACIO_NOT_FOUND');
+  }
+
+  if (
+    usuario.rol === 'OPERADOR' &&
+    espacio.parqueo.operadorId !== usuario.id
+  ) {
+    throw new Error('ESPACIO_FORBIDDEN');
   }
 
   return toEspacioResponse(espacio);
@@ -48,12 +63,24 @@ export const getEspacioByIdService = async (
 
 export const updateEstadoEspacioService = async (
   id: number,
-  input: UpdateEstadoEspacioInput
+  input: UpdateEstadoEspacioInput,
+  usuario: { id: number; rol: RolUsuario }
 ): Promise<EspacioResponse> => {
   const espacio = await findEspacioByIdRepository(id);
 
-  if (!espacio) {
+  if (!espacio || espacio.parqueo.estado !== 'ACTIVO') {
     throw new Error('ESPACIO_NOT_FOUND');
+  }
+
+  if (usuario.rol !== 'OPERADOR' && usuario.rol !== 'ADMIN') {
+    throw new Error('ESPACIO_FORBIDDEN');
+  }
+
+  if (
+    usuario.rol === 'OPERADOR' &&
+    espacio.parqueo.operadorId !== usuario.id
+  ) {
+    throw new Error('ESPACIO_FORBIDDEN');
   }
 
   const updatedEspacio = await updateEstadoEspacioRepository(id, input);

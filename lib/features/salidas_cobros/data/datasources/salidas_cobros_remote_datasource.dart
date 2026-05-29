@@ -8,6 +8,16 @@ class SalidasCobrosRemoteDataSource {
 
   final Dio _dio;
 
+  String? _textoOpcional(String? value) {
+    final text = value?.trim();
+
+    if (text == null || text.isEmpty) {
+      return null;
+    }
+
+    return text;
+  }
+
   Future<List<SalidaCobroDto>> getSalidasCobros({
     int? ingresoId,
     String? estadoPago,
@@ -44,7 +54,7 @@ class SalidasCobrosRemoteDataSource {
       data: {
         'ingresoId': ingresoId,
         'metodoPago': ?metodoPago,
-        'referencia': ?referencia,
+        'referencia': ?_textoOpcional(referencia),
       },
     );
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote_datasource.dart';
 import 'package:la_madriguera/features/ingresos/data/models/ingreso_dto.dart';
@@ -78,7 +79,7 @@ class VehiculosEstacionadosPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(24),
                 children: const [
                   SizedBox(height: 120),
-                  Icon(Icons.local_parking, size: 72, color: Color(0xFF2E7D32)),
+                  Icon(Icons.local_parking, size: 72, color: AppTheme.primary),
                   SizedBox(height: 16),
                   Text(
                     'No hay vehículos estacionados',
@@ -123,7 +124,7 @@ class VehiculosEstacionadosPage extends ConsumerWidget {
                         vehiculo.tipo == 'MOTO'
                             ? Icons.two_wheeler
                             : Icons.directions_car,
-                        color: const Color(0xFF2E7D32),
+                        color: AppTheme.primary,
                       ),
                     ),
                     title: Text(
@@ -131,7 +132,7 @@ class VehiculosEstacionadosPage extends ConsumerWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
-                      'Tipo: ${vehiculo.tipo} • Espacio: ${espacio.codigo} • Ingreso: ${_formatearHora(ingreso.fechaIngreso)}',
+                      'Tipo: ${vehiculo.tipo} � Espacio: ${espacio.codigo} � Ingreso: ${_formatearHora(ingreso.fechaIngreso)}',
                     ),
                     trailing: const Icon(Icons.chevron_right),
                   ),

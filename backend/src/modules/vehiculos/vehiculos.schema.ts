@@ -9,7 +9,6 @@ export const vehiculosQuerySchema = z.object({
 });
 
 export const createVehiculoSchema = z.object({
-  clienteId: z.coerce.number().int().positive('El id del cliente debe ser válido'),
   placa: z.string().trim().min(5, 'La placa debe tener al menos 5 caracteres').max(12).toUpperCase(),
   tipo: z.enum(['AUTO', 'MOTO', 'CAMIONETA']),
   marca: z.string().trim().min(1).max(50).optional(),
