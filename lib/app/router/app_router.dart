@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/login_page.dart';
@@ -11,6 +12,7 @@ import 'package:la_madriguera/features/historial/presentation/pages/historial_pa
 import 'package:la_madriguera/features/ingresos/presentation/pages/registrar_ingreso_page.dart';
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
 import 'package:la_madriguera/features/parqueos/presentation/pages/crear_parqueo_page.dart';
+import 'package:la_madriguera/features/parqueos/presentation/pages/mis_parqueos_page.dart';
 import 'package:la_madriguera/features/perfil/presentation/pages/perfil_page.dart';
 import 'package:la_madriguera/features/qr/presentation/pages/qr_tiempo_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/pages/crear_reserva_page.dart';
@@ -28,7 +30,7 @@ class AppRouter {
   static const String operadorHome = RouteNames.operadorHome;
   static const String adminHome = RouteNames.adminHome;
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+  static Route onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case RouteNames.login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
@@ -64,7 +66,6 @@ class AppRouter {
 
       case RouteNames.espacios:
         final parqueoId = (settings.arguments ?? 1) as int;
-
         return MaterialPageRoute(
           builder: (_) => EspaciosPage(parqueoId: parqueoId),
         );
@@ -80,6 +81,9 @@ class AppRouter {
 
       case RouteNames.crearParqueo:
         return MaterialPageRoute(builder: (_) => const CrearParqueoPage());
+
+      case RouteNames.misParqueos:
+        return MaterialPageRoute(builder: (_) => const MisParqueosPage());
 
       case RouteNames.crearReserva:
         final args = settings.arguments;

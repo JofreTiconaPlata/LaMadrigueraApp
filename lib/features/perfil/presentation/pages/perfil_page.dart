@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
@@ -31,7 +32,7 @@ class PerfilPage extends ConsumerWidget {
           icon: Icons.local_parking,
           title: 'Mi parqueo',
           onTap: () {
-            Navigator.pushNamed(context, RouteNames.espacios);
+            Navigator.pushNamed(context, RouteNames.misParqueos);
           },
         ),
         _option(
