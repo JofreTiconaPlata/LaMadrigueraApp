@@ -113,15 +113,14 @@ class _HomePageState extends ConsumerState<HomePage> {
         _drawerOption(
           context,
           Icons.directions_car,
-          'Gestión de vehículos',
-          RouteNames.registrarIngreso,
+          'Ingresos y vehículos estacionados',
+          RouteNames.vehiculosEstacionados,
         ),
-        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
         _drawerOption(
           context,
-          Icons.point_of_sale,
-          'Cobros',
-          RouteNames.salidasCobros,
+          Icons.qr_code_scanner,
+          'Validar QR / tiempo',
+          RouteNames.qrTiempo,
         ),
         _drawerOption(
           context,

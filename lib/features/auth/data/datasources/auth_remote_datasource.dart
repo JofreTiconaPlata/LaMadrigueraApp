@@ -25,6 +25,7 @@ class AuthRemoteDataSource {
     required String email,
     required String password,
     String? telefono,
+    String rol = 'CLIENTE',
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.authRegister,
@@ -33,7 +34,7 @@ class AuthRemoteDataSource {
         'email': email,
         'password': password,
         if (telefono != null && telefono.isNotEmpty) 'telefono': telefono,
-        'rol': 'CLIENTE',
+        'rol': rol,
       },
     );
 
