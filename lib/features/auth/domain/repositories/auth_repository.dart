@@ -8,6 +8,7 @@ abstract class AuthRepository {
     required String email,
     required String password,
     String? telefono,
+    String rol = 'CLIENTE',
   });
 
   Future<void> logout();

@@ -94,7 +94,36 @@ class DetalleParqueoPage extends ConsumerWidget {
       ),
       body: parqueoAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
+                const SizedBox(height: 12),
+                const Text(
+                  'No se pudo cargar el parqueo.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$error',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      ref.invalidate(detalleParqueoProvider(parqueoId)),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          ),
+        ),
         data: (parqueo) {
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -122,36 +151,24 @@ class DetalleParqueoPage extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(parqueo.direccion),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  const Icon(Icons.directions_car),
-                  const SizedBox(width: 8),
-                  Text('Espacios para autos: ${parqueo.espaciosAutos}'),
-                ],
+              _InfoRow(
+                icon: Icons.directions_car,
+                text: 'Espacios para autos: ${parqueo.espaciosAutos}',
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.two_wheeler),
-                  const SizedBox(width: 8),
-                  Text('Espacios para motos: ${parqueo.espaciosMotos}'),
-                ],
+              _InfoRow(
+                icon: Icons.two_wheeler,
+                text: 'Espacios para motos: ${parqueo.espaciosMotos}',
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.local_parking),
-                  const SizedBox(width: 8),
-                  Text('Capacidad total: ${parqueo.capacidadTotal}'),
-                ],
+              _InfoRow(
+                icon: Icons.local_parking,
+                text: 'Capacidad total: ${parqueo.capacidadTotal}',
               ),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.info_outline),
-                  const SizedBox(width: 8),
-                  Text('Estado: ${parqueo.estado}'),
-                ],
+              _InfoRow(
+                icon: Icons.info_outline,
+                text: 'Estado: ${parqueo.estado}',
               ),
               const SizedBox(height: 28),
               SizedBox(
@@ -187,6 +204,24 @@ class DetalleParqueoPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text)),
+      ],
     );
   }
 }
