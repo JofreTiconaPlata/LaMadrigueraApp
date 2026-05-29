@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
+import 'package:la_madriguera/shared/providers/session_provider.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _emailController = TextEditingController();
@@ -63,6 +65,8 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (!mounted) return;
+
+      ref.read(sessionProvider.notifier).state = usuario;
 
       switch (usuario.rol) {
         case RolEnum.cliente:
