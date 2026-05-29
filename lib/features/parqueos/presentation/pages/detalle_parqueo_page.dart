@@ -39,9 +39,7 @@ class DetalleParqueoPage extends ConsumerWidget {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
               child: const Text('Eliminar'),
             ),
           ],

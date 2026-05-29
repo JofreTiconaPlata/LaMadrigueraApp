@@ -130,7 +130,7 @@ class EspaciosPage extends ConsumerWidget {
           final ocupados = espacios
               .where((espacio) => espacio.estado == 'OCUPADO')
               .length;
-          
+
           final reservados = espacios
               .where((espacio) => espacio.estado == 'RESERVADO')
               .length;
