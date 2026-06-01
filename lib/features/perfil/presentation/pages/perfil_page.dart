@@ -215,17 +215,35 @@ class PerfilPage extends ConsumerWidget {
   }
 
   List<Widget> _optionsByRole(
-  BuildContext context,
-  WidgetRef ref,
-  RolEnum? rol,
-) {
-  if (rol == RolEnum.operador) {
+    BuildContext context,
+    WidgetRef ref,
+    RolEnum? rol,
+  ) {
+    if (rol == RolEnum.operador) {
+      return [
+        _option(
+          icon: Icons.local_parking,
+          title: 'Mi parqueo',
+          onTap: () {
+            Navigator.pushNamed(context, RouteNames.misParqueos);
+          },
+        ),
+        _option(
+          icon: Icons.edit,
+          title: 'Editar datos de cuenta',
+          onTap: () {
+            _mostrarEditarDatosDialog(context, ref);
+          },
+        ),
+      ];
+    }
+
     return [
       _option(
-        icon: Icons.local_parking,
-        title: 'Mi parqueo',
+        icon: Icons.history,
+        title: 'Historial de reservas',
         onTap: () {
-          Navigator.pushNamed(context, RouteNames.misParqueos);
+          Navigator.pushNamed(context, RouteNames.historial);
         },
       ),
       _option(
@@ -237,24 +255,6 @@ class PerfilPage extends ConsumerWidget {
       ),
     ];
   }
-
-  return [
-    _option(
-      icon: Icons.history,
-      title: 'Historial de reservas',
-      onTap: () {
-        Navigator.pushNamed(context, RouteNames.historial);
-      },
-    ),
-    _option(
-      icon: Icons.edit,
-      title: 'Editar datos de cuenta',
-      onTap: () {
-        _mostrarEditarDatosDialog(context, ref);
-      },
-    ),
-  ];
-}
 
   String _rolLabel(RolEnum? rol) {
     switch (rol) {
