@@ -90,12 +90,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               'Parqueo asignado',
               RouteNames.espacios,
             ),
-            _drawerOption(
-              context,
-              Icons.history,
-              'Historial de operaciones',
-              RouteNames.historial,
-            ),
           ],
         ),
         _drawerOption(
@@ -103,12 +97,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           Icons.add_location_alt,
           'Crear parqueo',
           RouteNames.crearParqueo,
-        ),
-        _drawerOption(
-          context,
-          Icons.local_parking,
-          'Disponibilidad de espacios',
-          RouteNames.espacios,
         ),
         _drawerOption(
           context,
