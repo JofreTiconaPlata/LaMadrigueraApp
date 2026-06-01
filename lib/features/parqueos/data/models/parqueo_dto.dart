@@ -1,6 +1,7 @@
 class ParqueoDto {
   const ParqueoDto({
     required this.id,
+    required this.operadorId,
     required this.nombre,
     required this.direccion,
     required this.latitud,
@@ -12,6 +13,7 @@ class ParqueoDto {
   });
 
   final int id;
+  final int operadorId;
   final String nombre;
   final String direccion;
   final double latitud;
@@ -24,6 +26,7 @@ class ParqueoDto {
   factory ParqueoDto.fromJson(Map<String, dynamic> json) {
     return ParqueoDto(
       id: json['id'] as int,
+      operadorId: (json['operadorId'] as num).toInt(),
       nombre: json['nombre'] as String,
       direccion: json['direccion'] as String,
       latitud: (json['latitud'] as num).toDouble(),

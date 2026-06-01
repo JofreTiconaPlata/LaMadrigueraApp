@@ -71,6 +71,6 @@ class ParqueosRemoteDataSource {
   }
 
   Future<void> deleteParqueo(int id) async {
-    await _dio.delete<Map<String, dynamic>>('\${ApiEndpoints.parqueos}/$id');
+    await _dio.delete<Map<String, dynamic>>('${ApiEndpoints.parqueos}/$id');
   }
 }
