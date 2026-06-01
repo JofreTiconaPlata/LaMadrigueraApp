@@ -20,6 +20,8 @@ class AuthRepositoryImpl implements AuthRepository {
     );
 
     await LocalStorageService.saveToken(response.token);
+    await LocalStorageService.saveUser(response.usuario);
+
     return response.usuario;
   }
 
@@ -40,6 +42,8 @@ class AuthRepositoryImpl implements AuthRepository {
     );
 
     await LocalStorageService.saveToken(response.token);
+    await LocalStorageService.saveUser(response.usuario);
+
     return response.usuario;
   }
 

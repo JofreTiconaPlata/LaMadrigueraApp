@@ -240,13 +240,6 @@ class PerfilPage extends ConsumerWidget {
 
     return [
       _option(
-        icon: Icons.history,
-        title: 'Historial de reservas',
-        onTap: () {
-          Navigator.pushNamed(context, RouteNames.historial);
-        },
-      ),
-      _option(
         icon: Icons.edit,
         title: 'Editar datos de cuenta',
         onTap: () {

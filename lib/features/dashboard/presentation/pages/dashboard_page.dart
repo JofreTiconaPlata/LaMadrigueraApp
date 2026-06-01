@@ -169,8 +169,24 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _mostrarDetalleParqueo(BuildContext context, ParqueoDto parqueo) {
-    final rol = ref.read(sessionProvider)?.rol;
+    final usuario = ref.read(sessionProvider);
+    final rol = usuario?.rol;
+
     final esCliente = rol == RolEnum.cliente;
+    final esOperador = rol == RolEnum.operador;
+
+    final operadorIdUsuario = int.tryParse(usuario?.id ?? '');
+
+    if (esOperador && parqueo.operadorId != operadorIdUsuario) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No puedes entrar a este parqueo porque pertenece a otro operador.',
+          ),
+        ),
+      );
+      return;
+    }
 
     showModalBottomSheet(
       context: context,
