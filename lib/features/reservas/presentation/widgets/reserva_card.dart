@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 
 class ReservaCard extends StatelessWidget {
-  const ReservaCard({super.key, required this.reserva, required this.onCancel});
+  const ReservaCard({super.key, required this.reserva});
 
   final ReservaDto reserva;
-  final VoidCallback onCancel;
 
   String _dosDigitos(int value) => value.toString().padLeft(2, '0');
 
@@ -15,28 +15,99 @@ class ReservaCard extends StatelessWidget {
         '${_dosDigitos(fecha.hour)}:${_dosDigitos(fecha.minute)}';
   }
 
-  bool get _puedeCancelar =>
-      reserva.estado == 'ACTIVA' || reserva.estado == 'PENDIENTE';
+  String get _estadoLabel {
+    switch (reserva.estado) {
+      case 'ACTIVA':
+        return 'EN PROGRESO';
+      case 'PENDIENTE':
+        return 'PENDIENTE';
+      case 'COMPLETADA':
+      case 'FINALIZADA':
+      case 'CANCELADA':
+        return 'TERMINADA';
+      default:
+        return reserva.estado;
+    }
+  }
 
   Color get _estadoColor {
     switch (reserva.estado) {
       case 'ACTIVA':
         return AppTheme.primary;
-      case 'COMPLETADA':
-        return Colors.blueGrey;
-      case 'CANCELADA':
-        return Colors.redAccent;
-      default:
+      case 'PENDIENTE':
         return Colors.orange;
+      case 'COMPLETADA':
+      case 'FINALIZADA':
+      case 'CANCELADA':
+        return Colors.blueGrey;
+      default:
+        return Colors.black54;
     }
+  }
+
+  IconData get _iconoTipoVehiculo {
+    final tipo = reserva.vehiculo?.tipo ?? '';
+
+    if (tipo == 'MOTO') {
+      return Icons.two_wheeler;
+    }
+
+    return Icons.directions_car;
+  }
+
+  Widget _infoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 19, color: AppTheme.primary),
+          const SizedBox(width: 9),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 14,
+                ),
+                children: [
+                  TextSpan(
+                    text: '$label: ',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: value),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final parqueoNombre =
+        reserva.parqueo?.nombre ?? 'Parqueo #${reserva.parqueoId}';
+    final parqueoDireccion =
+        reserva.parqueo?.direccion ?? 'Sin dirección registrada';
+    final placa = reserva.vehiculo?.placa ?? 'Vehículo #${reserva.vehiculoId}';
+    final tipoVehiculo = reserva.vehiculo?.tipo ?? 'Vehículo';
+    final espacio =
+        reserva.espacio?.codigo ??
+        (reserva.espacioId == null
+            ? 'Sin espacio'
+            : 'Espacio #${reserva.espacioId}');
+
     return Card(
+      margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(17),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -53,50 +124,44 @@ class ReservaCard extends StatelessWidget {
                     style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 17,
                     ),
                   ),
                 ),
                 Chip(
-                  label: Text(reserva.estado),
+                  label: Text(_estadoLabel),
                   side: BorderSide(color: _estadoColor),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(
-              'Parqueo ID: ${reserva.parqueoId}',
-              style: const TextStyle(color: AppTheme.textPrimary),
+            const SizedBox(height: 14),
+            _infoRow(
+              icon: Icons.local_parking,
+              label: 'Parqueo',
+              value: parqueoNombre,
             ),
-            Text(
-              'Vehículo ID: ${reserva.vehiculoId}',
-              style: const TextStyle(color: AppTheme.textPrimary),
+            _infoRow(
+              icon: Icons.place,
+              label: 'Lugar',
+              value: parqueoDireccion,
             ),
-            if (reserva.espacioId != null)
-              Text(
-                'Espacio ID: ${reserva.espacioId}',
-                style: const TextStyle(color: AppTheme.textPrimary),
-              ),
-            const SizedBox(height: 8),
-            Text(
-              'Inicio: ${_formatearFecha(reserva.fechaInicio)}',
-              style: const TextStyle(color: AppTheme.textSecondary),
+            _infoRow(
+              icon: _iconoTipoVehiculo,
+              label: 'Vehículo',
+              value: '$tipoVehiculo · Placa $placa',
             ),
-            Text(
-              'Fin: ${_formatearFecha(reserva.fechaFin)}',
-              style: const TextStyle(color: AppTheme.textSecondary),
+            _infoRow(icon: Icons.grid_view, label: 'Espacio', value: espacio),
+            const Divider(height: 22),
+            _infoRow(
+              icon: Icons.login,
+              label: 'Entrada',
+              value: _formatearFecha(reserva.fechaInicio),
             ),
-            if (_puedeCancelar) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onCancel,
-                  icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Cancelar reserva'),
-                ),
-              ),
-            ],
+            _infoRow(
+              icon: Icons.logout,
+              label: reserva.estaEnProgreso ? 'Salida estimada' : 'Salida',
+              value: _formatearFecha(reserva.fechaFin),
+            ),
           ],
         ),
       ),
