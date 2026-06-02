@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:la_madriguera/app/router/route_names.dart';
-import 'package:la_madriguera/features/admin/presentation/pages/admin_dashboard_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/login_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/register_page.dart';
 import 'package:la_madriguera/features/auth/presentation/pages/role_redirect_page.dart';
-import 'package:la_madriguera/features/dashboard/presentation/pages/admin_home_page.dart';
 import 'package:la_madriguera/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart';
 import 'package:la_madriguera/features/historial/presentation/pages/historial_page.dart';
@@ -46,72 +44,118 @@ class AppRouter {
 
       case RouteNames.clienteHome:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: HomePage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.cliente],
+            child: HomePage(),
+          ),
         );
 
       case RouteNames.operadorHome:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: HomePage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: HomePage(),
+          ),
         );
 
       case RouteNames.adminHome:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: AdminHomePage()),
+          builder: (_) => const _AccessDeniedPage(
+            message:
+                'El acceso administrador no está habilitado en la app móvil.',
+          ),
         );
 
       case RouteNames.perfil:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: PerfilPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.cliente, RolEnum.operador],
+            child: PerfilPage(),
+          ),
         );
 
       case RouteNames.registrarIngreso:
         return MaterialPageRoute(
-          builder: (_) =>
-              const _SessionRequiredPage(child: RegistrarIngresoPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: RegistrarIngresoPage(),
+          ),
         );
 
       case RouteNames.vehiculos:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: VehiculosPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.cliente],
+            child: VehiculosPage(),
+          ),
         );
 
       case RouteNames.vehiculosEstacionados:
         return MaterialPageRoute(
-          builder: (_) =>
-              const _SessionRequiredPage(child: VehiculosEstacionadosPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: VehiculosEstacionadosPage(),
+          ),
         );
 
       case RouteNames.espacios:
-        final parqueoId = (settings.arguments ?? 1) as int;
+        final args = settings.arguments;
+
+        if (args is! int) {
+          return MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(
+                child: Text('No se recibió el parqueo para ver espacios.'),
+              ),
+            ),
+          );
+        }
+
         return MaterialPageRoute(
-          builder: (_) =>
-              _SessionRequiredPage(child: EspaciosPage(parqueoId: parqueoId)),
+          builder: (_) => _RoleRequiredPage(
+            allowedRoles: const [RolEnum.cliente, RolEnum.operador],
+            child: EspaciosPage(parqueoId: args),
+          ),
         );
 
       case RouteNames.historial:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: HistorialPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.cliente, RolEnum.operador],
+            child: HistorialPage(),
+          ),
         );
 
       case RouteNames.tarifas:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: TarifasPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: TarifasPage(),
+          ),
         );
 
       case RouteNames.adminDashboard:
         return MaterialPageRoute(
-          builder: (_) =>
-              const _SessionRequiredPage(child: AdminDashboardPage()),
+          builder: (_) => const _AccessDeniedPage(
+            message:
+                'El acceso administrador no está habilitado en la app móvil.',
+          ),
         );
 
       case RouteNames.crearParqueo:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: CrearParqueoPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: CrearParqueoPage(),
+          ),
         );
 
       case RouteNames.misParqueos:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: MisParqueosPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: MisParqueosPage(),
+          ),
         );
 
       case RouteNames.crearReserva:
@@ -119,8 +163,10 @@ class AppRouter {
 
         if (args is ParqueoEntity) {
           return MaterialPageRoute(
-            builder: (_) =>
-                _SessionRequiredPage(child: CrearReservaPage(parqueo: args)),
+            builder: (_) => _RoleRequiredPage(
+              allowedRoles: const [RolEnum.cliente],
+              child: CrearReservaPage(parqueo: args),
+            ),
           );
         }
 
@@ -134,17 +180,26 @@ class AppRouter {
 
       case RouteNames.misReservas:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: MisReservasPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.cliente],
+            child: MisReservasPage(),
+          ),
         );
 
       case RouteNames.qrTiempo:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: QrTiempoPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.cliente, RolEnum.operador],
+            child: QrTiempoPage(),
+          ),
         );
 
       case RouteNames.salidasCobros:
         return MaterialPageRoute(
-          builder: (_) => const _SessionRequiredPage(child: CobroPage()),
+          builder: (_) => const _RoleRequiredPage(
+            allowedRoles: [RolEnum.operador],
+            child: CobroPage(),
+          ),
         );
 
       default:
@@ -187,9 +242,21 @@ class _LoginSessionGate extends ConsumerWidget {
   }
 }
 
-class _SessionRequiredPage extends ConsumerWidget {
-  const _SessionRequiredPage({required this.child});
+String _homeRouteByRole(RolEnum rol) {
+  switch (rol) {
+    case RolEnum.cliente:
+      return RouteNames.clienteHome;
+    case RolEnum.operador:
+      return RouteNames.operadorHome;
+    case RolEnum.administrador:
+      return RouteNames.adminHome;
+  }
+}
 
+class _RoleRequiredPage extends ConsumerWidget {
+  const _RoleRequiredPage({required this.allowedRoles, required this.child});
+
+  final List<RolEnum> allowedRoles;
   final Widget child;
 
   @override
@@ -197,7 +264,13 @@ class _SessionRequiredPage extends ConsumerWidget {
     final usuarioActual = ref.watch(sessionProvider);
 
     if (usuarioActual != null) {
-      return child;
+      if (allowedRoles.contains(usuarioActual.rol)) {
+        return child;
+      }
+
+      return _AccessDeniedPage(
+        message: 'No tienes permiso para acceder a esta sección.',
+      );
     }
 
     final sessionAsync = ref.watch(sessionInitializerProvider);
@@ -211,19 +284,25 @@ class _SessionRequiredPage extends ConsumerWidget {
           return const LoginPage();
         }
 
+        if (!allowedRoles.contains(usuario.rol)) {
+          return _AccessDeniedPage(
+            message: 'No tienes permiso para acceder a esta sección.',
+          );
+        }
+
         return child;
       },
     );
   }
 }
 
-String _homeRouteByRole(RolEnum rol) {
-  switch (rol) {
-    case RolEnum.cliente:
-      return RouteNames.clienteHome;
-    case RolEnum.operador:
-      return RouteNames.operadorHome;
-    case RolEnum.administrador:
-      return RouteNames.adminHome;
+class _AccessDeniedPage extends StatelessWidget {
+  const _AccessDeniedPage({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(body: Center(child: Text(message)));
   }
 }
