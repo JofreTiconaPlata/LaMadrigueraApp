@@ -40,6 +40,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   int _selectedBottomIndex = 0;
   Set<int> _favoriteParqueoIds = {};
+  LatLng? _currentUserLocation;
 
   static final LatLng _centroMapa = MapCityPresets.defaultCity.center;
   static final double _zoomMapa = MapCityPresets.defaultCity.zoom;
@@ -48,6 +49,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     _loadFavoriteParqueos();
+    _loadCurrentUserLocation();
   }
 
   Future<void> _loadFavoriteParqueos() async {
@@ -89,6 +91,44 @@ class _HomePageState extends ConsumerState<HomePage> {
     setState(() {
       _favoriteParqueoIds = ids.toSet();
     });
+  }
+
+  Future<void> _loadCurrentUserLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _currentUserLocation = LatLng(position.latitude, position.longitude);
+      });
+    } catch (_) {
+      // Si no se obtiene ubicación, no se rompe el mapa.
+    }
   }
 
   Widget _drawerOption(
@@ -605,6 +645,38 @@ class _HomePageState extends ConsumerState<HomePage> {
                         );
                       },
                     ),
+                    if (_currentUserLocation != null)
+                      MarkerLayer(
+                        markers: [
+                          Marker(
+                            point: _currentUserLocation!,
+                            width: 46,
+                            height: 46,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.blueAccent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 4,
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 8,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.my_location,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
