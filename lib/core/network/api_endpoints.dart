@@ -19,5 +19,6 @@ class ApiEndpoints {
   static const String ingresosActivos = '/api/ingresos/activos';
   static const String reservas = '/api/reservas';
   static const String misReservas = '/api/reservas/mis-reservas';
+  static const String reservasOperador = '/api/reservas/operador';
   static const String salidasCobros = '/api/salidas-cobros';
 }

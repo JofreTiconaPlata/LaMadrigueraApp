@@ -48,6 +48,18 @@ class ReservasRemoteDataSource {
         .toList();
   }
 
+  Future<List<ReservaDto>> getReservasOperador() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      ApiEndpoints.reservasOperador,
+    );
+
+    final data = response.data?['data'] as List<dynamic>? ?? [];
+
+    return data
+        .map((item) => ReservaDto.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<ReservaDto> cancelarReserva(int id) async {
     final response = await _dio.patch<Map<String, dynamic>>(
       '${ApiEndpoints.reservas}/$id/cancelar',

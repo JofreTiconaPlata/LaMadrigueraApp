@@ -63,4 +63,42 @@ class LocalStorageService {
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
   }
+
+  static String _favoriteParqueosKey(String userId) {
+    return 'favorite_parqueos_$userId';
+  }
+
+  static Future<List<int>> getFavoriteParqueoIds(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final values = prefs.getStringList(_favoriteParqueosKey(userId)) ?? [];
+
+    return values.map((value) => int.tryParse(value)).whereType<int>().toList();
+  }
+
+  static Future<void> saveFavoriteParqueoIds(
+    String userId,
+    List<int> parqueoIds,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final values = parqueoIds.toSet().map((id) => id.toString()).toList();
+
+    await prefs.setStringList(_favoriteParqueosKey(userId), values);
+  }
+
+  static Future<void> toggleFavoriteParqueo({
+    required String userId,
+    required int parqueoId,
+  }) async {
+    final currentIds = await getFavoriteParqueoIds(userId);
+    final updatedIds = currentIds.toSet();
+
+    if (updatedIds.contains(parqueoId)) {
+      updatedIds.remove(parqueoId);
+    } else {
+      updatedIds.add(parqueoId);
+    }
+
+    await saveFavoriteParqueoIds(userId, updatedIds.toList());
+  }
 }

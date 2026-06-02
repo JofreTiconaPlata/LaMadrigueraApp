@@ -5,13 +5,15 @@ import {
   createReservaController,
   getMisReservasController,
   getReservaByIdController,
-  getReservasController
+  getReservasController,
+  getReservasOperadorController
 } from './reservas.controller';
 
 export const reservasRoutes = Router();
 
 reservasRoutes.get('/', authMiddleware, getReservasController);
 reservasRoutes.get('/mis-reservas', authMiddleware, getMisReservasController);
+reservasRoutes.get('/operador', authMiddleware, getReservasOperadorController);
 reservasRoutes.post('/', authMiddleware, createReservaController);
 reservasRoutes.patch('/:id/cancelar', authMiddleware, cancelReservaController);
 reservasRoutes.get('/:id', authMiddleware, getReservaByIdController);

@@ -8,6 +8,7 @@ import {
   findParqueoByIdRepository,
   findReservaByIdRepository,
   findReservasRepository,
+  findReservasByOperadorIdRepository,
   findVehiculoByIdRepository,
 } from './reservas.repository';
 
@@ -88,6 +89,17 @@ export const getMisReservasService = async (
 
   const clienteId = await getOrCreateClienteIdFromUsuario(usuario.id);
   const reservas = await findReservasRepository(clienteId);
+  return reservas.map(toReservaResponse);
+};
+
+export const getReservasOperadorService = async (
+  usuario: { id: number; rol: RolUsuario }
+): Promise<ReservaResponse[]> => {
+  if (usuario.rol !== 'OPERADOR') {
+    throw new Error('RESERVA_FORBIDDEN');
+  }
+
+  const reservas = await findReservasByOperadorIdRepository(usuario.id);
   return reservas.map(toReservaResponse);
 };
 
