@@ -27,14 +27,66 @@ export const findParqueoByIdRepository = (parqueoId: number) => {
   });
 };
 
-export const findReservasByOperadorIdRepository = (operadorId: number) => {
+export const findReservasRepository = (clienteId?: number) => {
+  return prisma.reserva.findMany({
+    where: {
+      ...(clienteId ? { clienteId } : {}),
+    },
+    include: {
+      parqueo: {
+        select: {
+          id: true,
+          nombre: true,
+          direccion: true,
+        },
+      },
+      vehiculo: {
+        select: {
+          id: true,
+          placa: true,
+          tipo: true,
+        },
+      },
+      espacio: {
+        select: {
+          id: true,
+          codigo: true,
+          tipo: true,
+        },
+      },
+    },
+    orderBy: { id: 'desc' },
+  });
+};
+
+export const findReservasByOperadorRepository = (operadorId: number) => {
   return prisma.reserva.findMany({
     where: {
       parqueo: {
         operadorId,
       },
-      estado: {
-        in: ['PENDIENTE', 'ACTIVA'],
+    },
+    include: {
+      parqueo: {
+        select: {
+          id: true,
+          nombre: true,
+          direccion: true,
+        },
+      },
+      vehiculo: {
+        select: {
+          id: true,
+          placa: true,
+          tipo: true,
+        },
+      },
+      espacio: {
+        select: {
+          id: true,
+          codigo: true,
+          tipo: true,
+        },
       },
     },
     orderBy: { id: 'desc' },
@@ -44,6 +96,29 @@ export const findReservasByOperadorIdRepository = (operadorId: number) => {
 export const findReservaByIdRepository = (id: number) => {
   return prisma.reserva.findUnique({
     where: { id },
+    include: {
+      parqueo: {
+        select: {
+          id: true,
+          nombre: true,
+          direccion: true,
+        },
+      },
+      vehiculo: {
+        select: {
+          id: true,
+          placa: true,
+          tipo: true,
+        },
+      },
+      espacio: {
+        select: {
+          id: true,
+          codigo: true,
+          tipo: true,
+        },
+      },
+    },
   });
 };
 
