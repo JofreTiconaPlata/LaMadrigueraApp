@@ -10,7 +10,8 @@ import {
   createReservaService,
   getMisReservasService,
   getReservaByIdService,
-  getReservasService
+  getReservasService,
+  getReservasOperadorService
 } from './reservas.service';
 
 const ensureAuthenticated = (
@@ -72,7 +73,10 @@ const handleReservaError = (
     return true;
   }
 
-  if (error instanceof Error && error.message === 'ESPACIO_DISPONIBLE_NOT_FOUND') {
+  if (
+    error instanceof Error &&
+    error.message === 'ESPACIO_DISPONIBLE_NOT_FOUND'
+  ) {
     res.status(409).json({
       ok: false,
       message: 'No hay espacios disponibles para el tipo de vehículo'
@@ -158,6 +162,36 @@ export const getMisReservasController = async (
     res.status(500).json({
       ok: false,
       message: 'Error interno al obtener mis reservas'
+    });
+  }
+};
+
+export const getReservasOperadorController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  try {
+    const reservas = await getReservasOperadorService({
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
+
+    res.status(200).json({
+      ok: true,
+      data: reservas
+    });
+  } catch (error) {
+    if (handleReservaError(error, res)) {
+      return;
+    }
+
+    res.status(500).json({
+      ok: false,
+      message: 'Error interno al obtener reservas del operador'
     });
   }
 };

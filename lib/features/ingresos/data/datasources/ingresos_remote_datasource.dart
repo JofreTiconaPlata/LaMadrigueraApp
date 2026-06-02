@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import 'package:la_madriguera/core/network/api_endpoints.dart';
 import 'package:la_madriguera/core/network/dio_client.dart';
 import 'package:la_madriguera/features/ingresos/data/models/ingreso_dto.dart';
@@ -11,7 +12,10 @@ class IngresosRemoteDataSource {
   Future<List<IngresoDto>> getIngresos({int? parqueoId, String? estado}) async {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.ingresos,
-      queryParameters: {'parqueoId': ?parqueoId, 'estado': ?estado},
+      queryParameters: {
+        'parqueoId': ?parqueoId,
+        if (estado != null && estado.isNotEmpty) 'estado': estado,
+      },
     );
 
     final data = response.data?['data'] as List<dynamic>? ?? [];

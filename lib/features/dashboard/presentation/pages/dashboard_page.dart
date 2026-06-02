@@ -20,6 +20,8 @@ import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_activa_card.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
+import 'package:la_madriguera/features/reservas/data/datasources/reservas_remote_datasource.dart';
+import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 
 final parqueosDashboardProvider = FutureProvider<List<ParqueoDto>>((ref) async {
   final dataSource = ParqueosRemoteDataSource();
@@ -69,6 +71,30 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
+  Widget _drawerActionOption(
+    BuildContext context,
+    IconData icon,
+    String title,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: AppTheme.primary),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: AppTheme.textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+    );
+  }
+
   List<Widget> _drawerOptionsByRole(BuildContext context, RolEnum? rol) {
     if (rol == RolEnum.operador) {
       return [
@@ -98,11 +124,15 @@ class _HomePageState extends ConsumerState<HomePage> {
           'Crear parqueo',
           RouteNames.crearParqueo,
         ),
-        _drawerOption(
+        _drawerActionOption(
           context,
           Icons.directions_car,
           'Ingresos y vehículos estacionados',
-          RouteNames.vehiculosEstacionados,
+          () {
+            setState(() {
+              _selectedBottomIndex = 1;
+            });
+          },
         ),
         _drawerOption(
           context,
@@ -762,16 +792,16 @@ class _DashboardOverlayPanelState
       case 'Ingresos':
         return const [
           _OverlayInfoItem(
-            icon: Icons.login_rounded,
-            title: 'Nuevo ingreso',
+            icon: Icons.event_available_rounded,
+            title: 'Vehículos reservados',
             subtitle:
-                'Registra vehículo, espacio disponible y hora de ingreso.',
+                'Muestra las reservas del parqueo del operador pendientes de ingreso.',
           ),
           _OverlayInfoItem(
             icon: Icons.directions_car_rounded,
             title: 'Vehículos activos',
             subtitle:
-                'Mantén control de los vehículos actualmente estacionados.',
+                'Muestra los vehículos que ya se encuentran dentro del estacionamiento.',
           ),
         ];
       case 'Cobros':
@@ -872,6 +902,7 @@ class _DashboardOverlayPanelState
     }
   }
 
+  // ignore: unused_element
   Widget _buildIngresoInlineForm() {
     final vehiculosAsync = ref.watch(vehiculosIngresoProvider);
     final espaciosAsync = ref.watch(espaciosIngresoProvider);
@@ -996,11 +1027,125 @@ class _DashboardOverlayPanelState
     );
   }
 
+  Widget _buildVehiculosReservadosView() {
+    return FutureBuilder<List<ReservaDto>>(
+      future: ReservasRemoteDataSource().getReservasOperador(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              const Text(
+                'No se pudieron cargar las reservas del operador.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          );
+        }
+
+        final reservas = snapshot.data ?? [];
+
+        if (reservas.isEmpty) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'No hay vehículos reservados para tus parqueos.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _OverlayInfoTile(
+              info: const _OverlayInfoItem(
+                icon: Icons.event_available_rounded,
+                title: 'Vehículos reservados',
+                subtitle:
+                    'Reservas activas o pendientes de los parqueos del operador.',
+              ),
+              onTap: null,
+            ),
+            const SizedBox(height: 12),
+            ...reservas.map(
+              (reserva) => Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.event_available_rounded,
+                    color: AppTheme.primary,
+                  ),
+                  title: Text('Reserva #${reserva.id}'),
+                  subtitle: Text(
+                    'Parqueo: ${reserva.parqueoId} | Vehículo: ${reserva.vehiculoId} | Estado: ${reserva.estado}',
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildVehiculosActivosView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _OverlayInfoTile(
+          info: const _OverlayInfoItem(
+            icon: Icons.directions_car_rounded,
+            title: 'Vehículos activos',
+            subtitle:
+                'Aquí se mostrarán los vehículos que ya ingresaron y se encuentran actualmente dentro del estacionamiento.',
+          ),
+          onTap: () {
+            widget.onOpenRoute(RouteNames.vehiculosEstacionados);
+          },
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              widget.onOpenRoute(RouteNames.vehiculosEstacionados);
+            },
+            icon: const Icon(Icons.directions_car_filled_rounded),
+            label: const Text('Ver vehículos activos'),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPanelContent() {
-    if (widget.item.label == 'Ingresos' && _selectedAction == 'Nuevo ingreso') {
-      return _buildIngresoInlineForm();
+    if (widget.item.label == 'Ingresos' &&
+        _selectedAction == 'Vehículos reservados') {
+      return _buildVehiculosReservadosView();
     }
 
+    if (widget.item.label == 'Ingresos' &&
+        _selectedAction == 'Vehículos activos') {
+      return _buildVehiculosActivosView();
+    }
     return Column(
       children: [
         ..._infoItems.map(

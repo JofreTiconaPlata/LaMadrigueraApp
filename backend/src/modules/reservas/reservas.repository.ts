@@ -27,10 +27,15 @@ export const findParqueoByIdRepository = (parqueoId: number) => {
   });
 };
 
-export const findReservasRepository = (clienteId?: number) => {
+export const findReservasByOperadorIdRepository = (operadorId: number) => {
   return prisma.reserva.findMany({
     where: {
-      ...(clienteId ? { clienteId } : {}),
+      parqueo: {
+        operadorId,
+      },
+      estado: {
+        in: ['PENDIENTE', 'ACTIVA'],
+      },
     },
     orderBy: { id: 'desc' },
   });
