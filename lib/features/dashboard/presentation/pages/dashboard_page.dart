@@ -499,6 +499,33 @@ class _HomePageState extends ConsumerState<HomePage> {
     Navigator.pushReplacementNamed(context, RouteNames.login);
   }
 
+  double _dashboardMapHeight(BuildContext context) {
+    final media = MediaQuery.of(context);
+
+    final reservedBottomSpace = media.size.width < 600 ? 82.0 : 88.0;
+
+    final availableHeight =
+        media.size.height -
+        media.padding.top -
+        media.padding.bottom -
+        kToolbarHeight -
+        reservedBottomSpace;
+
+    if (media.size.width < 600) {
+      return availableHeight.clamp(620.0, 820.0);
+    }
+
+    return availableHeight.clamp(520.0, 900.0);
+  }
+
+  EdgeInsets _dashboardContentPadding() {
+    return EdgeInsets.zero;
+  }
+
+  double _dashboardMapRadius() {
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     final usuario = ref.watch(sessionProvider);
@@ -567,21 +594,15 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            padding: _dashboardContentPadding(),
             children: [
               Container(
-                height: 520,
+                height: _dashboardMapHeight(context),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: const Color(0xFFB7D6B9)),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(_dashboardMapRadius()),
+                  border: null,
+                  boxShadow: const [],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: FlutterMap(
