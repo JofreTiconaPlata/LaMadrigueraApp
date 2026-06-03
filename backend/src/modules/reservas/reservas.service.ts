@@ -8,13 +8,13 @@ import {
   findParqueoByIdRepository,
   findReservaByIdRepository,
   findReservasRepository,
-  findReservasByOperadorIdRepository,
+  findReservasByOperadorRepository,
   findVehiculoByIdRepository,
 } from './reservas.repository';
 
 type RolUsuario = 'CLIENTE' | 'OPERADOR' | 'ADMIN';
 
-const toReservaResponse = (reserva: {
+type ReservaConRelaciones = {
   id: number;
   clienteId: number;
   parqueoId: number;
@@ -25,7 +25,24 @@ const toReservaResponse = (reserva: {
   estado: string;
   createdAt: Date;
   updatedAt: Date;
-}): ReservaResponse => ({
+  parqueo?: {
+    id: number;
+    nombre: string;
+    direccion: string;
+  };
+  vehiculo?: {
+    id: number;
+    placa: string;
+    tipo: string;
+  };
+  espacio?: {
+    id: number;
+    codigo: string;
+    tipo: string;
+  } | null;
+};
+
+const toReservaResponse = (reserva: ReservaConRelaciones): ReservaResponse => ({
   id: reserva.id,
   clienteId: reserva.clienteId,
   parqueoId: reserva.parqueoId,
@@ -36,6 +53,27 @@ const toReservaResponse = (reserva: {
   estado: reserva.estado,
   createdAt: reserva.createdAt,
   updatedAt: reserva.updatedAt,
+  parqueo: reserva.parqueo
+    ? {
+        id: reserva.parqueo.id,
+        nombre: reserva.parqueo.nombre,
+        direccion: reserva.parqueo.direccion,
+      }
+    : undefined,
+  vehiculo: reserva.vehiculo
+    ? {
+        id: reserva.vehiculo.id,
+        placa: reserva.vehiculo.placa,
+        tipo: reserva.vehiculo.tipo,
+      }
+    : undefined,
+  espacio: reserva.espacio
+    ? {
+        id: reserva.espacio.id,
+        codigo: reserva.espacio.codigo,
+        tipo: reserva.espacio.tipo,
+      }
+    : null,
 });
 
 const getOrCreateClienteIdFromUsuario = async (
@@ -92,6 +130,7 @@ export const getMisReservasService = async (
   return reservas.map(toReservaResponse);
 };
 
+
 export const getReservasOperadorService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<ReservaResponse[]> => {
@@ -99,7 +138,7 @@ export const getReservasOperadorService = async (
     throw new Error('RESERVA_FORBIDDEN');
   }
 
-  const reservas = await findReservasByOperadorIdRepository(usuario.id);
+  const reservas = await findReservasByOperadorRepository(usuario.id);
   return reservas.map(toReservaResponse);
 };
 
