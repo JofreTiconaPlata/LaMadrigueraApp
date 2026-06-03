@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -41,6 +42,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   int _selectedBottomIndex = 0;
   Set<int> _favoriteParqueoIds = {};
   LatLng? _currentUserLocation;
+  Timer? _parqueosRefreshTimer;
 
   static final LatLng _centroMapa = MapCityPresets.defaultCity.center;
   static final double _zoomMapa = MapCityPresets.defaultCity.zoom;
@@ -50,6 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
     _loadFavoriteParqueos();
     _loadCurrentUserLocation();
+    _startParqueosAutoRefresh();
   }
 
   Future<void> _loadFavoriteParqueos() async {
@@ -129,6 +132,24 @@ class _HomePageState extends ConsumerState<HomePage> {
     } catch (_) {
       // Si no se obtiene ubicación, no se rompe el mapa.
     }
+  }
+
+  void _startParqueosAutoRefresh() {
+    _parqueosRefreshTimer?.cancel();
+
+    _parqueosRefreshTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ref.invalidate(parqueosDashboardProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _parqueosRefreshTimer?.cancel();
+    super.dispose();
   }
 
   Widget _drawerOption(
@@ -499,6 +520,26 @@ class _HomePageState extends ConsumerState<HomePage> {
     Navigator.pushReplacementNamed(context, RouteNames.login);
   }
 
+  Future<void> _refreshDashboardData() async {
+    ref.invalidate(parqueosDashboardProvider);
+
+    await _loadFavoriteParqueos();
+    await _loadCurrentUserLocation();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {});
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Parqueos actualizados.'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
   double _dashboardMapHeight(BuildContext context) {
     final media = MediaQuery.of(context);
 
@@ -585,6 +626,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           _homeTitleByRole(usuario?.rol),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Actualizar parqueos',
+            icon: const Icon(Icons.refresh_rounded),
+            onPressed: _refreshDashboardData,
+          ),
+        ],
       ),
       bottomNavigationBar: _DashboardBottomNavigation(
         selectedIndex: _selectedBottomIndex,
