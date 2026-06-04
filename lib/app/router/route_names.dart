@@ -22,4 +22,5 @@ class RouteNames {
   static const String misReservas = '/mis-reservas';
   static const String qrTiempo = '/qr-tiempo';
   static const String salidasCobros = '/salidas-cobros';
+  static const String reportesOperador = '/reportes-operador';
 }

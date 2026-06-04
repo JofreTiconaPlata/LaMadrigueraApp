@@ -14,6 +14,7 @@ import 'package:la_madriguera/features/parqueos/presentation/pages/crear_parqueo
 import 'package:la_madriguera/features/parqueos/presentation/pages/mis_parqueos_page.dart';
 import 'package:la_madriguera/features/perfil/presentation/pages/perfil_page.dart';
 import 'package:la_madriguera/features/qr/presentation/pages/qr_tiempo_page.dart';
+import 'package:la_madriguera/features/reportes/presentation/pages/reportes_operador_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/pages/crear_reserva_page.dart';
 import 'package:la_madriguera/features/reservas/presentation/pages/mis_reservas_page.dart';
 import 'package:la_madriguera/features/salidas_cobros/presentation/pages/salidas_cobros_page.dart';
@@ -201,6 +202,9 @@ class AppRouter {
             child: CobroPage(),
           ),
         );
+
+      case RouteNames.reportesOperador:
+        return MaterialPageRoute(builder: (_) => const ReportesOperadorPage());
 
       default:
         return MaterialPageRoute(
