@@ -5,7 +5,6 @@ class RouteNames {
 
   static const String clienteHome = '/cliente-home';
   static const String operadorHome = '/operador-home';
-  static const String adminHome = '/admin-home';
 
   static const String perfil = '/perfil';
   static const String registrarIngreso = '/registrar-ingreso';
@@ -14,7 +13,6 @@ class RouteNames {
   static const String espacios = '/espacios';
   static const String historial = '/historial';
   static const String tarifas = '/tarifas';
-  static const String adminDashboard = '/admin-dashboard';
   static const String crearParqueo = '/crear-parqueo';
   static const String misParqueos = '/mis-parqueos';
 

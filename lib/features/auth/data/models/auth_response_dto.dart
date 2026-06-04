@@ -29,9 +29,11 @@ class AuthResponseDto {
       case 'OPERADOR':
         return RolEnum.operador;
       case 'ADMIN':
-        return RolEnum.administrador;
+        throw const FormatException(
+          'El rol ADMIN no está habilitado en la app móvil pública.',
+        );
       default:
-        return RolEnum.cliente;
+        throw FormatException('Rol no soportado por la app móvil: $rol');
     }
   }
 }

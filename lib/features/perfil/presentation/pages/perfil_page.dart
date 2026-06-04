@@ -253,8 +253,6 @@ class PerfilPage extends ConsumerWidget {
     switch (rol) {
       case RolEnum.operador:
         return 'Operador';
-      case RolEnum.administrador:
-        return 'Administrador';
       case RolEnum.cliente:
       case null:
         return 'Cliente';

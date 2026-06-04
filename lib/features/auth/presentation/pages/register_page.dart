@@ -40,8 +40,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         return 'CLIENTE';
       case RolEnum.operador:
         return 'OPERADOR';
-      case RolEnum.administrador:
-        return 'CLIENTE';
     }
   }
 
@@ -74,12 +72,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           break;
         case RolEnum.operador:
           Navigator.pushReplacementNamed(context, RouteNames.operadorHome);
-          break;
-        case RolEnum.administrador:
-          setState(() {
-            _errorMessage =
-                'El acceso administrador no está habilitado en la app móvil.';
-          });
           break;
       }
     } catch (_) {
