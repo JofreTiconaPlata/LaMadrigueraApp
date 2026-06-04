@@ -24,6 +24,7 @@ import 'package:la_madriguera/shared/enums/rol_enum.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
 
 class AppRouter {
+  static const String root = RouteNames.root;
   static const String login = RouteNames.login;
   static const String register = RouteNames.register;
   static const String redirect = RouteNames.redirect;
@@ -32,6 +33,9 @@ class AppRouter {
 
   static Route onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case RouteNames.root:
+        return MaterialPageRoute(builder: (_) => const _LoginSessionGate());
+
       case RouteNames.login:
         return MaterialPageRoute(builder: (_) => const _LoginSessionGate());
 
@@ -186,10 +190,7 @@ class AppRouter {
         );
 
       default:
-        return MaterialPageRoute(
-          builder: (_) =>
-              const Scaffold(body: Center(child: Text('Ruta no encontrada'))),
-        );
+        return MaterialPageRoute(builder: (_) => const _LoginSessionGate());
     }
   }
 }
