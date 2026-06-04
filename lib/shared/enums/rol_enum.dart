@@ -1,1 +1,1 @@
-enum RolEnum { cliente, operador, administrador }
+enum RolEnum { cliente, operador }
