@@ -265,31 +265,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       ];
     }
 
-    if (rol == RolEnum.administrador) {
-      return [
-        _drawerOption(context, Icons.person, 'Mi perfil', RouteNames.perfil),
-        _drawerOption(
-          context,
-          Icons.admin_panel_settings,
-          'Panel administrativo',
-          RouteNames.adminDashboard,
-        ),
-        _drawerOption(
-          context,
-          Icons.add_location_alt,
-          'Crear parqueo',
-          RouteNames.crearParqueo,
-        ),
-        _drawerOption(context, Icons.payments, 'Tarifas', RouteNames.tarifas),
-        _drawerOption(
-          context,
-          Icons.history,
-          'Historial',
-          RouteNames.historial,
-        ),
-      ];
-    }
-
     return [
       _drawerOption(context, Icons.person, 'Perfil', RouteNames.perfil),
       _drawerOption(
@@ -306,8 +281,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     switch (rol) {
       case RolEnum.operador:
         return 'Panel operador';
-      case RolEnum.administrador:
-        return 'Panel administrador';
       case RolEnum.cliente:
       case null:
         return 'Parqueos cercanos';

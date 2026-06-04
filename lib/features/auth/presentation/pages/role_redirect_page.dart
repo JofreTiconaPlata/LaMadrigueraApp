@@ -24,9 +24,6 @@ class RoleRedirectPage extends ConsumerWidget {
         case RolEnum.operador:
           Navigator.pushReplacementNamed(context, RouteNames.operadorHome);
           break;
-        case RolEnum.administrador:
-          Navigator.pushReplacementNamed(context, RouteNames.adminHome);
-          break;
       }
     });
 

@@ -30,7 +30,6 @@ class AppRouter {
   static const String redirect = RouteNames.redirect;
   static const String clienteHome = RouteNames.clienteHome;
   static const String operadorHome = RouteNames.operadorHome;
-  static const String adminHome = RouteNames.adminHome;
 
   static Route onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -56,14 +55,6 @@ class AppRouter {
           builder: (_) => const _RoleRequiredPage(
             allowedRoles: [RolEnum.operador],
             child: HomePage(),
-          ),
-        );
-
-      case RouteNames.adminHome:
-        return MaterialPageRoute(
-          builder: (_) => const _AccessDeniedPage(
-            message:
-                'El acceso administrador no está habilitado en la app móvil.',
           ),
         );
 
@@ -132,14 +123,6 @@ class AppRouter {
           builder: (_) => const _RoleRequiredPage(
             allowedRoles: [RolEnum.operador],
             child: TarifasPage(),
-          ),
-        );
-
-      case RouteNames.adminDashboard:
-        return MaterialPageRoute(
-          builder: (_) => const _AccessDeniedPage(
-            message:
-                'El acceso administrador no está habilitado en la app móvil.',
           ),
         );
 
@@ -252,8 +235,6 @@ String _homeRouteByRole(RolEnum rol) {
       return RouteNames.clienteHome;
     case RolEnum.operador:
       return RouteNames.operadorHome;
-    case RolEnum.administrador:
-      return RouteNames.adminHome;
   }
 }
 
