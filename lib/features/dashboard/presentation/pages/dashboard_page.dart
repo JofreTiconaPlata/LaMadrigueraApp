@@ -252,6 +252,12 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         _drawerOption(
           context,
+          Icons.bar_chart,
+          'Reportes',
+          RouteNames.reportesOperador,
+        ),
+        _drawerOption(
+          context,
           Icons.history,
           'Historial de operaciones',
           RouteNames.historial,
