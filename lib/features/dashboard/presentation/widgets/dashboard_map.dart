@@ -13,6 +13,7 @@ class DashboardMapCard extends StatelessWidget {
     required this.borderRadius,
     required this.initialCenter,
     required this.initialZoom,
+    required this.mapController,
     required this.parqueosAsync,
     required this.currentUserLocation,
     required this.onParqueoTap,
@@ -23,6 +24,7 @@ class DashboardMapCard extends StatelessWidget {
   final double borderRadius;
   final LatLng initialCenter;
   final double initialZoom;
+  final MapController mapController;
   final AsyncValue<List<ParqueoDto>> parqueosAsync;
   final LatLng? currentUserLocation;
   final ValueChanged<ParqueoDto> onParqueoTap;
@@ -40,6 +42,7 @@ class DashboardMapCard extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: FlutterMap(
+        mapController: mapController,
         options: MapOptions(
           initialCenter: initialCenter,
           initialZoom: initialZoom,

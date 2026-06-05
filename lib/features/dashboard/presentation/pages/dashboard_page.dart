@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -40,6 +41,7 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _selectedBottomIndex = 0;
+  final MapController _mapController = MapController();
   Set<int> _favoriteParqueoIds = {};
   LatLng? _currentUserLocation;
   Timer? _parqueosRefreshTimer;
@@ -628,6 +630,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 borderRadius: _dashboardMapRadius(),
                 initialCenter: _centroMapa,
                 initialZoom: _zoomMapa,
+                mapController: _mapController,
                 parqueosAsync: ref.watch(parqueosDashboardProvider),
                 currentUserLocation: _currentUserLocation,
                 onParqueoTap: (parqueo) =>
