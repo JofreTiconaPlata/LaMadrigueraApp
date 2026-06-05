@@ -11,6 +11,7 @@ import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
 import 'package:la_madriguera/features/dashboard/presentation/config/map_city_presets.dart';
+import 'package:la_madriguera/features/dashboard/presentation/widgets/dashboard_map.dart';
 import 'package:la_madriguera/features/ingresos/presentation/pages/registrar_ingreso_page.dart'
     show espaciosIngresoProvider, parqueoDemoId, vehiculosIngresoProvider;
 import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote_datasource.dart';
@@ -40,8 +41,14 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   int _selectedBottomIndex = 0;
+  final MapController _mapController = MapController();
   Set<int> _favoriteParqueoIds = {};
+  Set<int> _nearbyParqueoIds = {};
   LatLng? _currentUserLocation;
+  LatLng? _nearbySearchCenter;
+  bool _showNearbyRipple = false;
+
+  static const double _nearbyRadiusMeters = 1000;
   Timer? _parqueosRefreshTimer;
 
   static final LatLng _centroMapa = MapCityPresets.defaultCity.center;
@@ -132,6 +139,37 @@ class _HomePageState extends ConsumerState<HomePage> {
     } catch (_) {
       // Si no se obtiene ubicación, no se rompe el mapa.
     }
+  }
+
+  Future<Position> _getCurrentPositionForMap() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+    if (!serviceEnabled) {
+      throw Exception('La ubicación del dispositivo está desactivada.');
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      throw Exception('Permiso de ubicación denegado.');
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception(
+        'Permiso de ubicación denegado permanentemente. Actívalo desde la configuración del dispositivo.',
+      );
+    }
+
+    return Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 12),
+      ),
+    );
   }
 
   void _startParqueosAutoRefresh() {
@@ -483,9 +521,72 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onBottomItemTap(int index) {
+    final bottomItems = _bottomItemsByRole(ref.read(sessionProvider)?.rol);
+    final selectedItem = bottomItems[index];
+
     setState(() {
       _selectedBottomIndex = index;
     });
+
+    if (selectedItem.label == 'Cercanos') {
+      unawaited(_focusNearbyParkings());
+    }
+  }
+
+  Future<void> _focusNearbyParkings() async {
+    LatLng referencia;
+    bool ubicacionReal = true;
+
+    try {
+      final position = await _getCurrentPositionForMap();
+      referencia = LatLng(position.latitude, position.longitude);
+    } catch (_) {
+      referencia = MapCityPresets.defaultCity.center;
+      ubicacionReal = false;
+    }
+
+    final parqueos = await ParqueosRemoteDataSource().getParqueos();
+
+    final nearbyIds = parqueos
+        .where((parqueo) {
+          final distanciaMetros = Geolocator.distanceBetween(
+            referencia.latitude,
+            referencia.longitude,
+            parqueo.latitud,
+            parqueo.longitud,
+          );
+
+          return distanciaMetros <= _nearbyRadiusMeters;
+        })
+        .map((parqueo) => parqueo.id)
+        .toSet();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      if (ubicacionReal) {
+        _currentUserLocation = referencia;
+      }
+
+      _nearbySearchCenter = referencia;
+      _nearbyParqueoIds = nearbyIds;
+      _showNearbyRipple = true;
+    });
+
+    _mapController.move(referencia, 16);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          nearbyIds.isEmpty
+              ? 'No se encontraron parqueos dentro de 1 km.'
+              : '${nearbyIds.length} parqueos encontrados dentro de 1 km.',
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
@@ -623,110 +724,25 @@ class _HomePageState extends ConsumerState<HomePage> {
           ListView(
             padding: _dashboardContentPadding(),
             children: [
-              Container(
+              DashboardMapCard(
                 height: _dashboardMapHeight(context),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(_dashboardMapRadius()),
-                  border: null,
-                  boxShadow: const [],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: _centroMapa,
-                    initialZoom: _zoomMapa,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.programovil.lamadriguera',
-                    ),
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final parqueosAsync = ref.watch(
-                          parqueosDashboardProvider,
-                        );
-
-                        return parqueosAsync.when(
-                          loading: () => const MarkerLayer(markers: []),
-                          error: (_, _) => const MarkerLayer(markers: []),
-                          data: (parqueos) {
-                            return MarkerLayer(
-                              markers: parqueos.map((parqueo) {
-                                return Marker(
-                                  point: LatLng(
-                                    parqueo.latitud,
-                                    parqueo.longitud,
-                                  ),
-                                  width: 56,
-                                  height: 56,
-                                  child: GestureDetector(
-                                    onTap: () => _mostrarDetalleParqueo(
-                                      context,
-                                      parqueo,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primary,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: const [
-                                          BoxShadow(
-                                            color: Colors.black26,
-                                            blurRadius: 6,
-                                            offset: Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.local_parking,
-                                        color: Colors.white,
-                                        size: 34,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    if (_currentUserLocation != null)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: _currentUserLocation!,
-                            width: 46,
-                            height: 46,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 8,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.my_location,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+                borderRadius: _dashboardMapRadius(),
+                initialCenter: _centroMapa,
+                initialZoom: _zoomMapa,
+                mapController: _mapController,
+                parqueosAsync: ref.watch(parqueosDashboardProvider),
+                currentUserLocation: _currentUserLocation,
+                highlightedParqueoIds: _nearbyParqueoIds,
+                nearbySearchCenter: _nearbySearchCenter,
+                showNearbyRipple: _showNearbyRipple,
+                nearbyRadiusMeters: _nearbyRadiusMeters,
+                onNearbyRippleCompleted: () {
+                  if (mounted) {
+                    setState(() => _showNearbyRipple = false);
+                  }
+                },
+                onParqueoTap: (parqueo) =>
+                    _mostrarDetalleParqueo(context, parqueo),
               ),
               const SizedBox(height: 16),
               const ReservaActivaCard(),
