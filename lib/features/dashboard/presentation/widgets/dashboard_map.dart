@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/features/dashboard/presentation/widgets/nearby_parking_ripple_layer.dart';
 import 'package:la_madriguera/features/parqueos/data/models/parqueo_dto.dart';
 
 class DashboardMapCard extends StatelessWidget {
@@ -18,6 +19,10 @@ class DashboardMapCard extends StatelessWidget {
     required this.currentUserLocation,
     required this.onParqueoTap,
     this.highlightedParqueoIds = const {},
+    this.nearbySearchCenter,
+    this.showNearbyRipple = false,
+    this.nearbyRadiusMeters = 1000,
+    this.onNearbyRippleCompleted,
   });
 
   final double height;
@@ -29,6 +34,10 @@ class DashboardMapCard extends StatelessWidget {
   final LatLng? currentUserLocation;
   final ValueChanged<ParqueoDto> onParqueoTap;
   final Set<int> highlightedParqueoIds;
+  final LatLng? nearbySearchCenter;
+  final bool showNearbyRipple;
+  final double nearbyRadiusMeters;
+  final VoidCallback? onNearbyRippleCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +61,13 @@ class DashboardMapCard extends StatelessWidget {
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.programovil.lamadriguera',
           ),
+          if (nearbySearchCenter != null)
+            NearbyParkingRippleLayer(
+              center: nearbySearchCenter!,
+              radiusMeters: nearbyRadiusMeters,
+              visible: showNearbyRipple,
+              onCompleted: onNearbyRippleCompleted,
+            ),
           parqueosAsync.when(
             loading: () => const MarkerLayer(markers: []),
             error: (_, _) => const MarkerLayer(markers: []),
