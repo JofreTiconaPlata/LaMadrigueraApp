@@ -86,6 +86,7 @@ export const findReservasByOperadorRepository = (operadorId: number) => {
           id: true,
           codigo: true,
           tipo: true,
+          estado: true,
         },
       },
     },
