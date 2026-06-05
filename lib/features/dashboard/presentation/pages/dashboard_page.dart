@@ -918,6 +918,8 @@ class _DashboardOverlayPanelState
   int? _espacioId;
   bool _registrandoIngreso = false;
 
+  static const double _nearbyRadiusMeters = 1000;
+
   @override
   void didUpdateWidget(covariant _DashboardOverlayPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -1573,21 +1575,67 @@ class _DashboardOverlayPanelState
           );
         }
 
-        final cercanos = snapshot.data ?? [];
+        final parqueosOrdenados = snapshot.data ?? [];
 
-        if (cercanos.isEmpty) {
+        if (parqueosOrdenados.isEmpty) {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(24),
               child: Text(
-                'No hay parqueos disponibles cerca de tu ubicación.',
+                'No hay parqueos disponibles.',
                 textAlign: TextAlign.center,
               ),
             ),
           );
         }
 
-        final ubicacionReal = cercanos.first['ubicacionReal'] as bool;
+        final ubicacionReal = parqueosOrdenados.first['ubicacionReal'] as bool;
+
+        final parqueosCercanos = parqueosOrdenados.where((item) {
+          final distanciaMetros = item['distanciaMetros'] as double;
+          return distanciaMetros <= _nearbyRadiusMeters;
+        }).toList();
+
+        final parqueosLejanos = parqueosOrdenados.where((item) {
+          final distanciaMetros = item['distanciaMetros'] as double;
+          return distanciaMetros > _nearbyRadiusMeters;
+        }).toList();
+
+        Widget buildParqueoTile(Map<String, dynamic> item) {
+          final parqueo = item['parqueo'] as ParqueoDto;
+          final distanciaMetros = item['distanciaMetros'] as double;
+          final esCercano = distanciaMetros <= _nearbyRadiusMeters;
+
+          return Card(
+            child: ListTile(
+              leading: Icon(
+                esCercano
+                    ? Icons.my_location_rounded
+                    : Icons.location_on_outlined,
+                color: esCercano ? AppTheme.primary : Colors.orangeAccent,
+              ),
+              title: Text(
+                parqueo.nombre,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                '${parqueo.direccion}\n'
+                '${ubicacionReal ? 'Distancia' : 'Distancia referencial'}: ${_formatDistance(distanciaMetros)} | '
+                'Espacios: ${parqueo.capacidadTotal}',
+              ),
+              isThreeLine: true,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EspaciosPage(parqueoId: parqueo.id),
+                  ),
+                );
+              },
+            ),
+          );
+        }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1597,44 +1645,53 @@ class _DashboardOverlayPanelState
                 child: Padding(
                   padding: EdgeInsets.all(12),
                   child: Text(
-                    'No se pudo usar tu ubicación real. Se muestran parqueos cercanos de forma referencial según el centro del mapa.',
+                    'No se pudo usar tu ubicación real. Se muestran parqueos de forma referencial según el centro del mapa.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ),
               ),
-            ...cercanos.map((item) {
-              final parqueo = item['parqueo'] as ParqueoDto;
-              final distanciaMetros = item['distanciaMetros'] as double;
 
-              return Card(
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.my_location_rounded,
-                    color: AppTheme.primary,
-                  ),
-                  title: Text(
-                    parqueo.nombre,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    '${parqueo.direccion}\n'
-                    '${ubicacionReal ? 'Distancia' : 'Distancia referencial'}: ${_formatDistance(distanciaMetros)} | '
-                    'Espacios: ${parqueo.capacidadTotal}',
-                  ),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => EspaciosPage(parqueoId: parqueo.id),
-                      ),
-                    );
-                  },
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Parqueos cercanos',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
-              );
-            }),
+              ),
+            ),
+
+            if (parqueosCercanos.isEmpty)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'No hay parqueos dentro de ${_formatDistance(_nearbyRadiusMeters)}.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              )
+            else
+              ...parqueosCercanos.map(buildParqueoTile),
+
+            if (parqueosLejanos.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Parqueos lejanos',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              ...parqueosLejanos.map(buildParqueoTile),
+            ],
           ],
         );
       },

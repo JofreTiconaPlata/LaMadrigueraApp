@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'package:la_madriguera/app/theme/app_theme.dart';
-
 class NearbyParkingRippleLayer extends StatefulWidget {
   const NearbyParkingRippleLayer({
     super.key,
@@ -93,8 +91,8 @@ class _NearbyParkingRippleLayerState extends State<NearbyParkingRippleLayer>
               point: widget.center,
               radius: radius,
               useRadiusInMeter: true,
-              color: AppTheme.primary.withValues(alpha: 0.10 * opacity),
-              borderColor: AppTheme.primary.withValues(alpha: 0.60 * opacity),
+              color: Colors.blueAccent.withValues(alpha: 0.12 * opacity),
+              borderColor: Colors.blueAccent.withValues(alpha: 0.65 * opacity),
               borderStrokeWidth: 3,
             ),
             CircleMarker(
@@ -102,7 +100,7 @@ class _NearbyParkingRippleLayerState extends State<NearbyParkingRippleLayer>
               radius: widget.radiusMeters,
               useRadiusInMeter: true,
               color: Colors.transparent,
-              borderColor: AppTheme.primary.withValues(alpha: 0.18),
+              borderColor: Colors.blueAccent.withValues(alpha: 0.28),
               borderStrokeWidth: 1.5,
             ),
           ],

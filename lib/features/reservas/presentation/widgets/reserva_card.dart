@@ -11,8 +11,10 @@ class ReservaCard extends StatelessWidget {
   String _dosDigitos(int value) => value.toString().padLeft(2, '0');
 
   String _formatearFecha(DateTime fecha) {
-    return '${_dosDigitos(fecha.day)}/${_dosDigitos(fecha.month)}/${fecha.year} '
-        '${_dosDigitos(fecha.hour)}:${_dosDigitos(fecha.minute)}';
+    final fechaLocal = fecha.toLocal();
+
+    return '${_dosDigitos(fechaLocal.day)}/${_dosDigitos(fechaLocal.month)}/${fechaLocal.year} '
+        '${_dosDigitos(fechaLocal.hour)}:${_dosDigitos(fechaLocal.minute)}';
   }
 
   String get _estadoLabel {
