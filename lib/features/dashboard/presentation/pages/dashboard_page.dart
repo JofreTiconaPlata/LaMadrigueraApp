@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,6 +10,7 @@ import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/core/storage/local_storage_service.dart';
 import 'package:la_madriguera/features/dashboard/presentation/config/map_city_presets.dart';
+import 'package:la_madriguera/features/dashboard/presentation/widgets/dashboard_map.dart';
 import 'package:la_madriguera/features/ingresos/presentation/pages/registrar_ingreso_page.dart'
     show espaciosIngresoProvider, parqueoDemoId, vehiculosIngresoProvider;
 import 'package:la_madriguera/features/ingresos/data/datasources/ingresos_remote_datasource.dart';
@@ -623,110 +623,15 @@ class _HomePageState extends ConsumerState<HomePage> {
           ListView(
             padding: _dashboardContentPadding(),
             children: [
-              Container(
+              DashboardMapCard(
                 height: _dashboardMapHeight(context),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(_dashboardMapRadius()),
-                  border: null,
-                  boxShadow: const [],
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: _centroMapa,
-                    initialZoom: _zoomMapa,
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.programovil.lamadriguera',
-                    ),
-                    Consumer(
-                      builder: (context, ref, _) {
-                        final parqueosAsync = ref.watch(
-                          parqueosDashboardProvider,
-                        );
-
-                        return parqueosAsync.when(
-                          loading: () => const MarkerLayer(markers: []),
-                          error: (_, _) => const MarkerLayer(markers: []),
-                          data: (parqueos) {
-                            return MarkerLayer(
-                              markers: parqueos.map((parqueo) {
-                                return Marker(
-                                  point: LatLng(
-                                    parqueo.latitud,
-                                    parqueo.longitud,
-                                  ),
-                                  width: 56,
-                                  height: 56,
-                                  child: GestureDetector(
-                                    onTap: () => _mostrarDetalleParqueo(
-                                      context,
-                                      parqueo,
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.primary,
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: const [
-                                          BoxShadow(
-                                            color: Colors.black26,
-                                            blurRadius: 6,
-                                            offset: Offset(0, 3),
-                                          ),
-                                        ],
-                                      ),
-                                      child: const Icon(
-                                        Icons.local_parking,
-                                        color: Colors.white,
-                                        size: 34,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                    if (_currentUserLocation != null)
-                      MarkerLayer(
-                        markers: [
-                          Marker(
-                            point: _currentUserLocation!,
-                            width: 46,
-                            height: 46,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 4,
-                                ),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 8,
-                                    offset: Offset(0, 3),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.my_location,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+                borderRadius: _dashboardMapRadius(),
+                initialCenter: _centroMapa,
+                initialZoom: _zoomMapa,
+                parqueosAsync: ref.watch(parqueosDashboardProvider),
+                currentUserLocation: _currentUserLocation,
+                onParqueoTap: (parqueo) =>
+                    _mostrarDetalleParqueo(context, parqueo),
               ),
               const SizedBox(height: 16),
               const ReservaActivaCard(),
