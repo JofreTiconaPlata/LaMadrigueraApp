@@ -61,6 +61,21 @@ class DashboardMapCard extends StatelessWidget {
             urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             userAgentPackageName: 'com.programovil.lamadriguera',
           ),
+
+          if (nearbySearchCenter != null)
+            CircleLayer(
+              circles: [
+                CircleMarker(
+                  point: nearbySearchCenter!,
+                  radius: nearbyRadiusMeters,
+                  useRadiusInMeter: true,
+                  color: Colors.blueAccent.withValues(alpha: 0.10),
+                  borderColor: Colors.blueAccent.withValues(alpha: 0.45),
+                  borderStrokeWidth: 2,
+                ),
+              ],
+            ),
+
           if (nearbySearchCenter != null)
             NearbyParkingRippleLayer(
               center: nearbySearchCenter!,
@@ -68,6 +83,7 @@ class DashboardMapCard extends StatelessWidget {
               visible: showNearbyRipple,
               onCompleted: onNearbyRippleCompleted,
             ),
+
           parqueosAsync.when(
             loading: () => const MarkerLayer(markers: []),
             error: (_, _) => const MarkerLayer(markers: []),
@@ -115,11 +131,11 @@ class DashboardMapCard extends StatelessWidget {
               );
             },
           ),
-          if (currentUserLocation != null)
+          if (nearbySearchCenter != null)
             MarkerLayer(
               markers: [
                 Marker(
-                  point: currentUserLocation!,
+                  point: nearbySearchCenter!,
                   width: 46,
                   height: 46,
                   child: Container(
