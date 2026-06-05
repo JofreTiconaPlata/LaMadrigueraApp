@@ -2,8 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import 'package:la_madriguera/app/theme/app_theme.dart';
-import 'package:la_madriguera/features/salidas_cobros/data/datasources/salidas_cobros_remote_datasource.dart';
-import 'package:la_madriguera/features/salidas_cobros/data/models/salida_cobro_dto.dart';
+import 'package:la_madriguera/features/reservas/data/datasources/reservas_remote_datasource.dart';
+import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 
 enum TipoReporteVehiculo { auto, moto }
 
@@ -219,49 +219,28 @@ class _DetalleReportePage extends StatefulWidget {
 }
 
 class _DetalleReportePageState extends State<_DetalleReportePage> {
-  late Future<List<SalidaCobroDto>> _future;
+  late Future<List<ReservaDto>> _future;
 
   @override
   void initState() {
     super.initState();
-    _future = SalidasCobrosRemoteDataSource().getSalidasCobros();
+    _future = ReservasRemoteDataSource().getReservasOperador();
   }
 
-  List<SalidaCobroDto> _filtrarPorPeriodo(List<SalidaCobroDto> salidas) {
+  List<ReservaDto> _filtrarPorPeriodo(List<ReservaDto> reservas) {
     final ahora = DateTime.now();
     final desde = widget.periodo.desde(ahora);
 
-    return salidas.where((salida) {
-      final fecha = salida.fechaSalida;
+    return reservas.where((reserva) {
+      final fecha = reserva.fechaInicio;
       return fecha.isAfter(desde) || fecha.isAtSameMomentAs(desde);
     }).toList();
   }
 
-  List<SalidaCobroDto> _filtrarPorTipo(
-    List<SalidaCobroDto> salidas,
-    String tipo,
-  ) {
-    return salidas.where((salida) {
-      return salida.ingreso.vehiculo.tipo == tipo;
+  List<ReservaDto> _filtrarPorTipo(List<ReservaDto> reservas, String tipo) {
+    return reservas.where((reserva) {
+      return reserva.vehiculo?.tipo == tipo;
     }).toList();
-  }
-
-  double _sumarMonto(List<SalidaCobroDto> salidas) {
-    return salidas.fold<double>(
-      0,
-      (total, salida) => total + salida.montoTotal,
-    );
-  }
-
-  double _promedioTiempo(List<SalidaCobroDto> salidas) {
-    if (salidas.isEmpty) return 0;
-
-    final total = salidas.fold<int>(
-      0,
-      (sum, salida) => sum + salida.tiempoTotalMinutos,
-    );
-
-    return total / salidas.length;
   }
 
   String _formatearFecha(DateTime fecha) {
@@ -271,13 +250,13 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
         '${two(fecha.hour)}:${two(fecha.minute)}';
   }
 
-  String _parqueoMasUsado(List<SalidaCobroDto> salidas) {
-    if (salidas.isEmpty) return 'Sin datos';
+  String _parqueoMasUsado(List<ReservaDto> reservas) {
+    if (reservas.isEmpty) return 'Sin datos';
 
     final conteo = <String, int>{};
 
-    for (final salida in salidas) {
-      final nombre = salida.ingreso.parqueo.nombre;
+    for (final reserva in reservas) {
+      final nombre = reserva.parqueo?.nombre ?? 'Parqueo #${reserva.parqueoId}';
       conteo[nombre] = (conteo[nombre] ?? 0) + 1;
     }
 
@@ -417,8 +396,8 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
     );
   }
 
-  Widget _detalleList(List<SalidaCobroDto> salidas) {
-    if (salidas.isEmpty) {
+  Widget _detalleList(List<ReservaDto> reservas) {
+    if (reservas.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 30),
         child: Center(
@@ -431,10 +410,10 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
     }
 
     return Column(
-      children: salidas.map((salida) {
-        final vehiculo = salida.ingreso.vehiculo;
-        final parqueo = salida.ingreso.parqueo;
-        final espacio = salida.ingreso.espacio;
+      children: reservas.map((reserva) {
+        final vehiculo = reserva.vehiculo;
+        final parqueo = reserva.parqueo;
+        final espacio = reserva.espacio;
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
@@ -443,17 +422,19 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
           ),
           child: ListTile(
             leading: Icon(
-              vehiculo.tipo == 'MOTO'
+              vehiculo?.tipo == 'MOTO'
                   ? Icons.two_wheeler
                   : Icons.directions_car,
               color: AppTheme.primary,
             ),
-            title: Text('${vehiculo.placa} · ${parqueo.nombre}'),
+            title: Text(
+              '${vehiculo?.placa ?? 'Sin placa'} · ${parqueo?.nombre ?? 'Parqueo #${reserva.parqueoId}'}',
+            ),
             subtitle: Text(
-              '${espacio.codigo} · ${_formatearFecha(salida.fechaSalida)}',
+              '${espacio?.codigo ?? 'Espacio #${reserva.espacioId ?? '-'}'} · ${_formatearFecha(reserva.fechaInicio)}',
             ),
             trailing: Text(
-              '${salida.montoTotal.toStringAsFixed(2)} Bs',
+              '${0.toStringAsFixed(2)} Bs',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -469,7 +450,7 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
       appBar: AppBar(
         title: Text('${widget.tipo.label} · ${widget.periodo.label}'),
       ),
-      body: FutureBuilder<List<SalidaCobroDto>>(
+      body: FutureBuilder<List<ReservaDto>>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -488,23 +469,21 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
             );
           }
 
-          final salidasPeriodo = _filtrarPorPeriodo(snapshot.data ?? []);
-          final autos = _filtrarPorTipo(salidasPeriodo, 'AUTO');
-          final motos = _filtrarPorTipo(salidasPeriodo, 'MOTO');
+          final reservasPeriodo = _filtrarPorPeriodo(snapshot.data ?? []);
+          final autos = _filtrarPorTipo(reservasPeriodo, 'AUTO');
+          final motos = _filtrarPorTipo(reservasPeriodo, 'MOTO');
 
           final seleccionadas = _filtrarPorTipo(
-            salidasPeriodo,
+            reservasPeriodo,
             widget.tipo.backendValue,
           );
 
-          final monto = _sumarMonto(seleccionadas);
-          final promedio = _promedioTiempo(seleccionadas);
           final parqueoMasUsado = _parqueoMasUsado(seleccionadas);
 
           return RefreshIndicator(
             onRefresh: () async {
               setState(() {
-                _future = SalidasCobrosRemoteDataSource().getSalidasCobros();
+                _future = ReservasRemoteDataSource().getReservasOperador();
               });
               await _future;
             },
@@ -537,8 +516,8 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
                     const SizedBox(width: 10),
                     _metricCard(
                       icon: Icons.payments,
-                      title: 'Recaudado',
-                      value: '${monto.toStringAsFixed(2)} Bs',
+                      title: 'Reservas',
+                      value: '${seleccionadas.length}',
                     ),
                   ],
                 ),
@@ -547,14 +526,15 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
                   children: [
                     _metricCard(
                       icon: Icons.timer,
-                      title: 'Tiempo promedio',
-                      value: '${promedio.round()} min',
+                      title: 'En progreso',
+                      value:
+                          '${seleccionadas.where((r) => r.estaEnProgreso).length}',
                     ),
                     const SizedBox(width: 10),
                     _metricCard(
                       icon: Icons.summarize,
                       title: 'Total periodo',
-                      value: '${salidasPeriodo.length}',
+                      value: '${reservasPeriodo.length}',
                     ),
                   ],
                 ),
