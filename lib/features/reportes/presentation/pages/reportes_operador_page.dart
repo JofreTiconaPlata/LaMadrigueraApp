@@ -5,13 +5,15 @@ import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/reservas/data/datasources/reservas_remote_datasource.dart';
 import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 
-enum TipoReporteVehiculo { auto, moto }
+enum TipoReporteVehiculo { general, auto, moto }
 
 enum PeriodoReporte { diario, tresDias, semanal, mensual, anual }
 
 extension TipoReporteVehiculoX on TipoReporteVehiculo {
   String get label {
     switch (this) {
+      case TipoReporteVehiculo.general:
+        return 'General';
       case TipoReporteVehiculo.auto:
         return 'Autos';
       case TipoReporteVehiculo.moto:
@@ -19,17 +21,32 @@ extension TipoReporteVehiculoX on TipoReporteVehiculo {
     }
   }
 
-  String get backendValue {
+  String get title {
     switch (this) {
+      case TipoReporteVehiculo.general:
+        return 'Reporte general de vehículos';
       case TipoReporteVehiculo.auto:
-        return 'AUTO';
+        return 'Reportes de Autos';
       case TipoReporteVehiculo.moto:
-        return 'MOTO';
+        return 'Reportes de Motos';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case TipoReporteVehiculo.general:
+        return 'Autos y motos juntos por periodo.';
+      case TipoReporteVehiculo.auto:
+        return 'Estadísticas solo de autos.';
+      case TipoReporteVehiculo.moto:
+        return 'Estadísticas solo de motos.';
     }
   }
 
   IconData get icon {
     switch (this) {
+      case TipoReporteVehiculo.general:
+        return Icons.analytics_outlined;
       case TipoReporteVehiculo.auto:
         return Icons.directions_car;
       case TipoReporteVehiculo.moto:
@@ -85,6 +102,7 @@ class ReportesOperadorPage extends StatelessWidget {
     required TipoReporteVehiculo tipo,
   }) {
     return Card(
+      elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -104,13 +122,28 @@ class ReportesOperadorPage extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Text(
-                  'Reportes de ${tipo.label}',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tipo.title,
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (tipo == TipoReporteVehiculo.general) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        tipo.description,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const Icon(Icons.chevron_right),
@@ -146,6 +179,8 @@ class ReportesOperadorPage extends StatelessWidget {
           _tipoCard(context: context, tipo: TipoReporteVehiculo.auto),
           const SizedBox(height: 14),
           _tipoCard(context: context, tipo: TipoReporteVehiculo.moto),
+          const SizedBox(height: 14),
+          _tipoCard(context: context, tipo: TipoReporteVehiculo.general),
         ],
       ),
     );
@@ -170,7 +205,7 @@ class _SeleccionPeriodoPage extends StatelessWidget {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: ListTile(
-        leading: Icon(Icons.calendar_month, color: AppTheme.primary),
+        leading: const Icon(Icons.calendar_month, color: AppTheme.primary),
         title: Text(
           periodo.label,
           style: const TextStyle(fontWeight: FontWeight.bold),
@@ -188,7 +223,7 @@ class _SeleccionPeriodoPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(title: Text('Reportes de ${tipo.label}')),
+      appBar: AppBar(title: Text(tipo.title)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -199,6 +234,11 @@ class _SeleccionPeriodoPage extends StatelessWidget {
               fontSize: 22,
               fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            tipo.description,
+            style: const TextStyle(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 16),
           ...periodos.map((periodo) => _periodoCard(context, periodo)),
@@ -227,6 +267,22 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
     _future = ReservasRemoteDataSource().getReservasOperador();
   }
 
+  String _tipoVehiculo(ReservaDto reserva) {
+    return reserva.vehiculo?.tipo.trim().toUpperCase() ?? '';
+  }
+
+  bool _esAuto(ReservaDto reserva) => _tipoVehiculo(reserva) == 'AUTO';
+
+  bool _esMoto(ReservaDto reserva) => _tipoVehiculo(reserva) == 'MOTO';
+
+  bool _estaEnProgreso(ReservaDto reserva) {
+    final estado = reserva.estado.trim().toUpperCase();
+    return estado == 'ACTIVA' ||
+        estado == 'PENDIENTE' ||
+        estado == 'RESERVADA' ||
+        estado == 'EN_PROGRESO';
+  }
+
   List<ReservaDto> _filtrarPorPeriodo(List<ReservaDto> reservas) {
     final ahora = DateTime.now();
     final desde = widget.periodo.desde(ahora);
@@ -237,10 +293,17 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
     }).toList();
   }
 
-  List<ReservaDto> _filtrarPorTipo(List<ReservaDto> reservas, String tipo) {
-    return reservas.where((reserva) {
-      return reserva.vehiculo?.tipo == tipo;
-    }).toList();
+  List<ReservaDto> _filtrarPorTipo(List<ReservaDto> reservas) {
+    switch (widget.tipo) {
+      case TipoReporteVehiculo.general:
+        return reservas.where((reserva) {
+          return _esAuto(reserva) || _esMoto(reserva);
+        }).toList();
+      case TipoReporteVehiculo.auto:
+        return reservas.where(_esAuto).toList();
+      case TipoReporteVehiculo.moto:
+        return reservas.where(_esMoto).toList();
+    }
   }
 
   String _formatearFecha(DateTime fecha) {
@@ -271,38 +334,44 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
     required String title,
     required String value,
   }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8E4)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: AppTheme.primary),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8E4)),
       ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppTheme.primary),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metricRow(List<Widget> children) {
+    return Row(
+      children: [
+        for (int index = 0; index < children.length; index++) ...[
+          Expanded(child: children[index]),
+          if (index != children.length - 1) const SizedBox(width: 10),
+        ],
+      ],
     );
   }
 
@@ -422,25 +491,35 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
           ),
           child: ListTile(
             leading: Icon(
-              vehiculo?.tipo == 'MOTO'
-                  ? Icons.two_wheeler
-                  : Icons.directions_car,
+              _esMoto(reserva) ? Icons.two_wheeler : Icons.directions_car,
               color: AppTheme.primary,
             ),
             title: Text(
-              '${vehiculo?.placa ?? 'Sin placa'} · ${parqueo?.nombre ?? 'Parqueo #${reserva.parqueoId}'}',
+              '${vehiculo?.placa ?? 'Sin placa'} · '
+              '${parqueo?.nombre ?? 'Parqueo #${reserva.parqueoId}'}',
             ),
             subtitle: Text(
-              '${espacio?.codigo ?? 'Espacio #${reserva.espacioId ?? '-'}'} · ${_formatearFecha(reserva.fechaInicio)}',
+              '${espacio?.codigo ?? 'Espacio #${reserva.espacioId ?? '-'}'} · '
+              '${_formatearFecha(reserva.fechaInicio)}',
             ),
             trailing: Text(
-              '${0.toStringAsFixed(2)} Bs',
+              reserva.estado,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         );
       }).toList(),
     );
+  }
+
+  String _tituloReporte() {
+    final periodo = widget.periodo.label.toLowerCase();
+
+    if (widget.tipo == TipoReporteVehiculo.general) {
+      return 'Reporte general $periodo';
+    }
+
+    return 'Reporte $periodo de ${widget.tipo.label}';
   }
 
   @override
@@ -470,15 +549,15 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
           }
 
           final reservasPeriodo = _filtrarPorPeriodo(snapshot.data ?? []);
-          final autos = _filtrarPorTipo(reservasPeriodo, 'AUTO');
-          final motos = _filtrarPorTipo(reservasPeriodo, 'MOTO');
-
-          final seleccionadas = _filtrarPorTipo(
-            reservasPeriodo,
-            widget.tipo.backendValue,
-          );
+          final autosPeriodo = reservasPeriodo.where(_esAuto).toList();
+          final motosPeriodo = reservasPeriodo.where(_esMoto).toList();
+          final seleccionadas = _filtrarPorTipo(reservasPeriodo);
 
           final parqueoMasUsado = _parqueoMasUsado(seleccionadas);
+          final enProgreso = seleccionadas
+              .where((reserva) => _estaEnProgreso(reserva))
+              .length;
+          final terminadas = seleccionadas.length - enProgreso;
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -491,7 +570,7 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'Reporte ${widget.periodo.label.toLowerCase()} de ${widget.tipo.label}',
+                  _tituloReporte(),
                   style: const TextStyle(
                     color: AppTheme.textPrimary,
                     fontSize: 22,
@@ -504,40 +583,77 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
                   style: const TextStyle(color: AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 18),
-                _chartCard(autos: autos.length, motos: motos.length),
+                _chartCard(
+                  autos: autosPeriodo.length,
+                  motos: motosPeriodo.length,
+                ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
+                if (widget.tipo == TipoReporteVehiculo.general) ...[
+                  _metricRow([
+                    _metricCard(
+                      icon: Icons.directions_car,
+                      title: 'Autos',
+                      value: '${autosPeriodo.length}',
+                    ),
+                    _metricCard(
+                      icon: Icons.two_wheeler,
+                      title: 'Motos',
+                      value: '${motosPeriodo.length}',
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  _metricRow([
+                    _metricCard(
+                      icon: Icons.summarize,
+                      title: 'Total general',
+                      value: '${seleccionadas.length}',
+                    ),
+                    _metricCard(
+                      icon: Icons.timelapse,
+                      title: 'En progreso',
+                      value: '$enProgreso',
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  _metricRow([
+                    _metricCard(
+                      icon: Icons.check_circle,
+                      title: 'Terminadas',
+                      value: '$terminadas',
+                    ),
+                    _metricCard(
+                      icon: Icons.calendar_month,
+                      title: 'Total periodo',
+                      value: '${reservasPeriodo.length}',
+                    ),
+                  ]),
+                ] else ...[
+                  _metricRow([
                     _metricCard(
                       icon: widget.tipo.icon,
                       title: widget.tipo.label,
                       value: '${seleccionadas.length}',
                     ),
-                    const SizedBox(width: 10),
-                    _metricCard(
-                      icon: Icons.payments,
-                      title: 'Reservas',
-                      value: '${seleccionadas.length}',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _metricCard(
-                      icon: Icons.timer,
-                      title: 'En progreso',
-                      value:
-                          '${seleccionadas.where((r) => r.estaEnProgreso).length}',
-                    ),
-                    const SizedBox(width: 10),
                     _metricCard(
                       icon: Icons.summarize,
                       title: 'Total periodo',
                       value: '${reservasPeriodo.length}',
                     ),
-                  ],
-                ),
+                  ]),
+                  const SizedBox(height: 10),
+                  _metricRow([
+                    _metricCard(
+                      icon: Icons.timelapse,
+                      title: 'En progreso',
+                      value: '$enProgreso',
+                    ),
+                    _metricCard(
+                      icon: Icons.check_circle,
+                      title: 'Terminadas',
+                      value: '$terminadas',
+                    ),
+                  ]),
+                ],
                 const SizedBox(height: 24),
                 const Text(
                   'Detalle de registros',
