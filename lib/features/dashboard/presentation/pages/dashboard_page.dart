@@ -299,7 +299,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         'Mis reservas',
         RouteNames.misReservas,
       ),
-      _drawerOption(context, Icons.qr_code_2, 'Código QR', RouteNames.qrTiempo),
     ];
   }
 
@@ -1003,7 +1002,7 @@ class _DashboardOverlayPanelState
       case 'Ingresos':
         return 'Registra el ingreso de vehículos al parqueo y mantén actualizado el control operativo.';
       case 'Cobros':
-        return 'Gestiona salidas, calcula cobros y finaliza estacionamientos activos.';
+        return 'Consulta el historial de cobros realizados.';
       default:
         return 'Acceso rápido desde el panel principal de La Madriguera.';
     }
@@ -1328,12 +1327,18 @@ class _DashboardOverlayPanelState
 
         final reservas = snapshot.data ?? [];
 
-        if (reservas.isEmpty) {
+        final reservasPendientes = reservas.where((reserva) {
+          return reserva.estado != 'COMPLETADA' &&
+              reserva.estado != 'FINALIZADA' &&
+              reserva.estado != 'CANCELADA';
+        }).toList();
+
+        if (reservasPendientes.isEmpty) {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(24),
               child: Text(
-                'No hay vehículos reservados para tus parqueos.',
+                'No hay vehículos reservados pendientes de ingreso.',
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1348,25 +1353,47 @@ class _DashboardOverlayPanelState
                 icon: Icons.event_available_rounded,
                 title: 'Vehículos reservados',
                 subtitle:
-                    'Reservas activas o pendientes de los parqueos del operador.',
+                    'Reservas del cliente pendientes de ingreso al parqueo.',
               ),
               onTap: null,
             ),
             const SizedBox(height: 12),
-            ...reservas.map(
-              (reserva) => Card(
+            ...reservasPendientes.map((reserva) {
+              final vehiculo = reserva.vehiculo;
+              final parqueo = reserva.parqueo;
+              final espacio = reserva.espacio;
+
+              final tipoVehiculo = vehiculo?.tipo ?? 'Sin tipo';
+              final placa = vehiculo?.placa ?? 'Sin placa';
+              final parqueoNombre =
+                  parqueo?.nombre ?? 'Parqueo #${reserva.parqueoId}';
+              final espacioCodigo =
+                  espacio?.codigo ??
+                  (reserva.espacioId == null
+                      ? 'Sin espacio asignado'
+                      : 'Espacio #${reserva.espacioId}');
+
+              return Card(
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.event_available_rounded,
+                  leading: Icon(
+                    tipoVehiculo == 'MOTO'
+                        ? Icons.two_wheeler_rounded
+                        : Icons.directions_car_rounded,
                     color: AppTheme.primary,
                   ),
-                  title: Text('Reserva #${reserva.id}'),
-                  subtitle: Text(
-                    'Parqueo: ${reserva.parqueoId} | Vehículo: ${reserva.vehiculoId} | Estado: ${reserva.estado}',
+                  title: Text(
+                    '$tipoVehiculo - $placa',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  subtitle: Text(
+                    'Parqueo: $parqueoNombre\n'
+                    'Espacio: $espacioCodigo\n'
+                    'Estado: ${reserva.estado}',
+                  ),
+                  isThreeLine: true,
                 ),
-              ),
-            ),
+              );
+            }),
           ],
         );
       },
@@ -1374,32 +1401,241 @@ class _DashboardOverlayPanelState
   }
 
   Widget _buildVehiculosActivosView() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _OverlayInfoTile(
-          info: const _OverlayInfoItem(
-            icon: Icons.directions_car_rounded,
-            title: 'Vehículos activos',
-            subtitle:
-                'Aquí se mostrarán los vehículos que ya ingresaron y se encuentran actualmente dentro del estacionamiento.',
-          ),
-          onTap: () {
-            widget.onOpenRoute(RouteNames.vehiculosEstacionados);
-          },
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 48,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              widget.onOpenRoute(RouteNames.vehiculosEstacionados);
-            },
-            icon: const Icon(Icons.directions_car_filled_rounded),
-            label: const Text('Ver vehículos activos'),
-          ),
-        ),
-      ],
+    return FutureBuilder<List<ReservaDto>>(
+      future: ReservasRemoteDataSource().getReservasOperador(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              const Text(
+                'No se pudieron cargar los vehículos activos.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          );
+        }
+
+        final reservas = snapshot.data ?? [];
+
+        final vehiculosActivos = reservas.where((reserva) {
+          return reserva.estado != 'COMPLETADA' &&
+              reserva.estado != 'FINALIZADA' &&
+              reserva.estado != 'CANCELADA';
+        }).toList();
+
+        if (vehiculosActivos.isEmpty) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'No hay vehículos activos.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Vehículos activos',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            ...vehiculosActivos.map((reserva) {
+              final vehiculo = reserva.vehiculo;
+              final tipoVehiculo = vehiculo?.tipo ?? 'Sin tipo';
+              final placa = vehiculo?.placa ?? 'Sin placa';
+
+              return Card(
+                child: ListTile(
+                  leading: Icon(
+                    tipoVehiculo == 'MOTO'
+                        ? Icons.two_wheeler_rounded
+                        : Icons.directions_car_rounded,
+                    color: AppTheme.primary,
+                  ),
+                  title: Text(
+                    '$tipoVehiculo - $placa',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      },
+    );
+  }
+
+  String _formatearFechaHora(DateTime fecha) {
+    final local = fecha.toLocal();
+    final dia = local.day.toString().padLeft(2, '0');
+    final mes = local.month.toString().padLeft(2, '0');
+    final anio = local.year.toString();
+    final hora = local.hour.toString().padLeft(2, '0');
+    final minuto = local.minute.toString().padLeft(2, '0');
+
+    return '$dia/$mes/$anio $hora:$minuto';
+  }
+
+  String _formatearTiempoReserva(DateTime inicio, DateTime fin) {
+    final minutosTotales = fin.difference(inicio).inMinutes.abs();
+    final horas = minutosTotales ~/ 60;
+    final minutos = minutosTotales % 60;
+
+    if (horas <= 0) {
+      return '$minutos min';
+    }
+
+    if (minutos == 0) {
+      return '$horas h';
+    }
+
+    return '$horas h $minutos min';
+  }
+
+  double _calcularMontoReserva(DateTime inicio, DateTime fin) {
+    const tarifaHora = 5.0;
+    final minutos = fin.difference(inicio).inMinutes.abs();
+
+    if (minutos <= 0) {
+      return tarifaHora;
+    }
+
+    final horasCobradas = (minutos / 60).ceil();
+    return horasCobradas * tarifaHora;
+  }
+
+  Widget _buildCobrosOperadorView() {
+    return FutureBuilder<List<ReservaDto>>(
+      future: ReservasRemoteDataSource().getReservasOperador(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Icon(Icons.cloud_off, size: 56, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              const Text(
+                'No se pudieron cargar los cobros.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          );
+        }
+
+        final reservas = snapshot.data ?? [];
+
+        final cobros = reservas.where((reserva) {
+          return reserva.estado != 'CANCELADA';
+        }).toList();
+
+        if (cobros.isEmpty) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'No hay tarifas registradas todavía.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Historial de cobros',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            ...cobros.map((reserva) {
+              final vehiculo = reserva.vehiculo;
+              final tipoVehiculo = vehiculo?.tipo ?? 'Sin tipo';
+              final placa = vehiculo?.placa ?? 'Sin placa';
+
+              final tiempo = _formatearTiempoReserva(
+                reserva.fechaInicio,
+                reserva.fechaFin,
+              );
+
+              final monto = _calcularMontoReserva(
+                reserva.fechaInicio,
+                reserva.fechaFin,
+              );
+
+              return Card(
+                child: ListTile(
+                  leading: Icon(
+                    tipoVehiculo == 'MOTO'
+                        ? Icons.two_wheeler_rounded
+                        : Icons.directions_car_rounded,
+                    color: AppTheme.primary,
+                  ),
+                  title: Text(
+                    '$tipoVehiculo - $placa',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    'Entrada: ${_formatearFechaHora(reserva.fechaInicio)}\n'
+                    'Salida: ${_formatearFechaHora(reserva.fechaFin)}\n'
+                    'Tiempo: $tiempo\n'
+                    'Tarifa: Bs 5.00 por hora\n'
+                    'Monto: Bs ${monto.toStringAsFixed(2)}',
+                  ),
+                  isThreeLine: true,
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
@@ -1750,6 +1986,9 @@ class _DashboardOverlayPanelState
     if (widget.item.label == 'Ingresos' &&
         _selectedAction == 'Vehículos activos') {
       return _buildVehiculosActivosView();
+    }
+    if (widget.item.label == 'Cobros') {
+      return _buildCobrosOperadorView();
     }
 
     return Column(
