@@ -258,12 +258,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           childrenPadding: const EdgeInsets.only(left: 12),
           children: [
             _drawerOption(context, Icons.badge, 'Mis datos', RouteNames.perfil),
-            _drawerOption(
-              context,
-              Icons.local_parking,
-              'Parqueo asignado',
-              RouteNames.espacios,
-            ),
           ],
         ),
         _drawerOption(
@@ -281,12 +275,6 @@ class _HomePageState extends ConsumerState<HomePage> {
               _selectedBottomIndex = 1;
             });
           },
-        ),
-        _drawerOption(
-          context,
-          Icons.qr_code_scanner,
-          'Validar QR / tiempo',
-          RouteNames.qrTiempo,
         ),
         _drawerOption(
           context,
@@ -590,6 +578,30 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Cerrar sesión'),
+          content: const Text('¿Estás seguro que quieres cerrar sesión?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Sí, cerrar sesión'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar != true) {
+      return;
+    }
+
     ref.read(sessionProvider.notifier).state = null;
     await LocalStorageService.clearToken();
 
@@ -597,7 +609,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       return;
     }
 
-    Navigator.pushReplacementNamed(context, RouteNames.login);
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      RouteNames.login,
+      (route) => false,
+    );
   }
 
   Future<void> _refreshDashboardData() async {
@@ -652,113 +668,132 @@ class _HomePageState extends ConsumerState<HomePage> {
     final usuario = ref.watch(sessionProvider);
     final bottomItems = _bottomItemsByRole(usuario?.rol);
 
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      drawer: Drawer(
-        backgroundColor: Colors.white,
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-            children: [
-              UserAccountsDrawerHeader(
-                decoration: const BoxDecoration(color: AppTheme.primaryDark),
-                accountName: Text(
-                  usuario?.nombre ?? 'Usuario La Madriguera',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Para salir, usa la opción Cerrar sesión.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        drawer: Drawer(
+          backgroundColor: Colors.white,
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              children: [
+                UserAccountsDrawerHeader(
+                  decoration: const BoxDecoration(color: AppTheme.primaryDark),
+                  accountName: Text(
+                    usuario?.nombre ?? 'Usuario La Madriguera',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  accountEmail: Text(
+                    usuario?.correo ?? 'usuario@gmail.com',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  currentAccountPicture: const CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.person,
+                      size: 42,
+                      color: AppTheme.primary,
+                    ),
                   ),
                 ),
-                accountEmail: Text(
-                  usuario?.correo ?? 'usuario@gmail.com',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                currentAccountPicture: const CircleAvatar(
-                  backgroundColor: Colors.white,
-                  child: Icon(Icons.person, size: 42, color: AppTheme.primary),
-                ),
-              ),
-              ..._drawerOptionsByRole(context, usuario?.rol),
-              const Divider(height: 24),
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text(
-                  'Cerrar sesión',
-                  style: TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w500,
+                ..._drawerOptionsByRole(context, usuario?.rol),
+                const Divider(height: 24),
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.redAccent),
+                  title: const Text(
+                    'Cerrar sesión',
+                    style: TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _logout(context, ref);
+                  },
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _logout(context, ref);
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      appBar: AppBar(
-        title: Text(
-          _homeTitleByRole(usuario?.rol),
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        appBar: AppBar(
+          title: Text(
+            _homeTitleByRole(usuario?.rol),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          actions: [
+            IconButton(
+              tooltip: 'Actualizar parqueos',
+              icon: const Icon(Icons.refresh_rounded),
+              onPressed: _refreshDashboardData,
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Actualizar parqueos',
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _refreshDashboardData,
-          ),
-        ],
-      ),
-      bottomNavigationBar: _DashboardBottomNavigation(
-        selectedIndex: _selectedBottomIndex,
-        items: bottomItems,
-        onItemTap: _onBottomItemTap,
-      ),
-      body: Stack(
-        children: [
-          ListView(
-            padding: _dashboardContentPadding(),
-            children: [
-              DashboardMapCard(
-                height: _dashboardMapHeight(context),
-                borderRadius: _dashboardMapRadius(),
-                initialCenter: _centroMapa,
-                initialZoom: _zoomMapa,
-                mapController: _mapController,
-                parqueosAsync: ref.watch(parqueosDashboardProvider),
-                currentUserLocation: _currentUserLocation,
-                highlightedParqueoIds: _nearbyParqueoIds,
-                nearbySearchCenter: _nearbySearchCenter,
-                showNearbyRipple: _showNearbyRipple,
-                nearbyRadiusMeters: _nearbyRadiusMeters,
-                onNearbyRippleCompleted: () {
-                  if (mounted) {
-                    setState(() => _showNearbyRipple = false);
-                  }
-                },
-                onParqueoTap: (parqueo) =>
-                    _mostrarDetalleParqueo(context, parqueo),
-              ),
-              const SizedBox(height: 16),
-              const ReservaActivaCard(),
-            ],
-          ),
-          _DashboardOverlayPanel(
-            item: bottomItems[_selectedBottomIndex],
-            visible: _selectedBottomIndex != 0,
-            onClose: () {
-              setState(() {
-                _selectedBottomIndex = 0;
-              });
-            },
-            onOpenRoute: (route) => Navigator.pushNamed(context, route),
-          ),
-        ],
+        bottomNavigationBar: _DashboardBottomNavigation(
+          selectedIndex: _selectedBottomIndex,
+          items: bottomItems,
+          onItemTap: _onBottomItemTap,
+        ),
+        body: Stack(
+          children: [
+            ListView(
+              padding: _dashboardContentPadding(),
+              children: [
+                DashboardMapCard(
+                  height: _dashboardMapHeight(context),
+                  borderRadius: _dashboardMapRadius(),
+                  initialCenter: _centroMapa,
+                  initialZoom: _zoomMapa,
+                  mapController: _mapController,
+                  parqueosAsync: ref.watch(parqueosDashboardProvider),
+                  currentUserLocation: _currentUserLocation,
+                  highlightedParqueoIds: _nearbyParqueoIds,
+                  nearbySearchCenter: _nearbySearchCenter,
+                  showNearbyRipple: _showNearbyRipple,
+                  nearbyRadiusMeters: _nearbyRadiusMeters,
+                  onNearbyRippleCompleted: () {
+                    if (mounted) {
+                      setState(() => _showNearbyRipple = false);
+                    }
+                  },
+                  onParqueoTap: (parqueo) =>
+                      _mostrarDetalleParqueo(context, parqueo),
+                ),
+                const SizedBox(height: 16),
+                const ReservaActivaCard(),
+              ],
+            ),
+            _DashboardOverlayPanel(
+              item: bottomItems[_selectedBottomIndex],
+              visible: _selectedBottomIndex != 0,
+              onClose: () {
+                setState(() {
+                  _selectedBottomIndex = 0;
+                });
+              },
+              onOpenRoute: (route) => Navigator.pushNamed(context, route),
+            ),
+          ],
+        ),
       ),
     );
   }
