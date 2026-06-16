@@ -24,3 +24,16 @@ export const createUsuario = (input: RegisterInput, passwordHash: string) => {
     }
   });
 };
+
+export const updateUsuarioById = (
+  id: number,
+  data: {
+    nombre?: string;
+    passwordHash?: string;
+  }
+) => {
+  return prisma.usuario.update({
+    where: { id },
+    data
+  });
+};

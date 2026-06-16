@@ -9,6 +9,7 @@ class ApiEndpoints {
   static const String authRegister = '/api/auth/register';
   static const String authLogin = '/api/auth/login';
   static const String authMe = '/api/auth/me';
+  static const String authUpdateMe = '/api/auth/me';
 
   static const String parqueos = '/api/parqueos';
   static const String misParqueos = '/api/parqueos/mios';

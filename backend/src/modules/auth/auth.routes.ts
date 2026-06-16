@@ -3,7 +3,8 @@ import { authMiddleware } from '../../middlewares/auth.middleware';
 import {
   loginController,
   meController,
-  registerController
+  registerController,
+  updateMeController
 } from './auth.controller';
 
 export const authRoutes = Router();
@@ -11,3 +12,4 @@ export const authRoutes = Router();
 authRoutes.post('/register', registerController);
 authRoutes.post('/login', loginController);
 authRoutes.get('/me', authMiddleware, meController);
+authRoutes.patch('/me', authMiddleware, updateMeController);
