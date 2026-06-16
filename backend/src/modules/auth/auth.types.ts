@@ -13,6 +13,12 @@ export interface LoginInput {
   password: string;
 }
 
+export interface UpdateMeInput {
+  nombre?: string;
+  passwordActual?: string;
+  passwordNueva?: string;
+}
+
 export interface AuthTokenPayload {
   id: number;
   email: string;

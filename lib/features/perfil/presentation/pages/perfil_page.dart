@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:la_madriguera/app/router/route_names.dart';
 import 'package:la_madriguera/app/theme/app_theme.dart';
+import 'package:la_madriguera/core/storage/local_storage_service.dart';
+import 'package:la_madriguera/features/perfil/data/datasources/perfil_remote_datasource.dart';
 import 'package:la_madriguera/shared/enums/rol_enum.dart';
-import 'package:la_madriguera/shared/models/usuario_model.dart';
 import 'package:la_madriguera/shared/providers/session_provider.dart';
 
 class PerfilPage extends ConsumerWidget {
@@ -26,7 +27,10 @@ class PerfilPage extends ConsumerWidget {
     );
   }
 
-  void _mostrarEditarDatosDialog(BuildContext context, WidgetRef ref) {
+  Future<void> _mostrarEditarDatosDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final usuarioActual = ref.read(sessionProvider);
 
     if (usuarioActual == null) {
@@ -38,180 +42,313 @@ class PerfilPage extends ConsumerWidget {
 
     final formKey = GlobalKey<FormState>();
     final nombreController = TextEditingController(text: usuarioActual.nombre);
-    final passwordController = TextEditingController();
+    final passwordActualController = TextEditingController();
+    final passwordNuevaController = TextEditingController();
     final confirmarPasswordController = TextEditingController();
 
-    bool ocultarPassword = true;
-    bool ocultarConfirmacion = true;
+    var ocultarPasswordActual = true;
+    var ocultarPasswordNueva = true;
+    var ocultarConfirmacion = true;
+    var guardando = false;
 
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Editar datos de cuenta'),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: nombreController,
-                        decoration: InputDecoration(
-                          labelText: 'Nombre de usuario',
-                          prefixIcon: const Icon(Icons.person_outline),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        validator: (value) {
-                          final text = value?.trim() ?? '';
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final quiereCambiarPassword =
+                  passwordActualController.text.isNotEmpty ||
+                  passwordNuevaController.text.isNotEmpty ||
+                  confirmarPasswordController.text.isNotEmpty;
 
-                          if (text.isEmpty) {
-                            return 'Ingresa el nombre de usuario';
-                          }
-
-                          if (text.length < 3) {
-                            return 'El nombre debe tener al menos 3 caracteres';
-                          }
-
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: passwordController,
-                        obscureText: ocultarPassword,
-                        decoration: InputDecoration(
-                          labelText: 'Nueva contraseña',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              setDialogState(() {
-                                ocultarPassword = !ocultarPassword;
-                              });
-                            },
-                            icon: Icon(
-                              ocultarPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
+              return PopScope(
+                canPop: !guardando,
+                child: AlertDialog(
+                  title: const Text('Editar datos de cuenta'),
+                  content: Form(
+                    key: formKey,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextFormField(
+                            controller: nombreController,
+                            enabled: !guardando,
+                            decoration: InputDecoration(
+                              labelText: 'Nombre de usuario',
+                              prefixIcon: const Icon(Icons.person_outline),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        validator: (value) {
-                          final text = value?.trim() ?? '';
+                            validator: (value) {
+                              final text = value?.trim() ?? '';
 
-                          if (text.isEmpty) {
-                            return null;
-                          }
+                              if (text.isEmpty) {
+                                return 'Ingresa el nombre de usuario';
+                              }
 
-                          if (text.length < 6) {
-                            return 'La contraseña debe tener al menos 6 caracteres';
-                          }
+                              if (text.length < 2) {
+                                return 'El nombre debe tener al menos 2 caracteres';
+                              }
 
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: confirmarPasswordController,
-                        obscureText: ocultarConfirmacion,
-                        decoration: InputDecoration(
-                          labelText: 'Confirmar contraseña',
-                          prefixIcon: const Icon(Icons.lock_reset_outlined),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              setDialogState(() {
-                                ocultarConfirmacion = !ocultarConfirmacion;
-                              });
+                              if (text.length > 100) {
+                                return 'El nombre no puede superar 100 caracteres';
+                              }
+
+                              return null;
                             },
-                            icon: Icon(
-                              ocultarConfirmacion
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: passwordActualController,
+                            enabled: !guardando,
+                            obscureText: ocultarPasswordActual,
+                            onChanged: (_) => setDialogState(() {}),
+                            decoration: InputDecoration(
+                              labelText: 'Contraseña actual',
+                              prefixIcon: const Icon(Icons.key_outlined),
+                              suffixIcon: IconButton(
+                                onPressed: guardando
+                                    ? null
+                                    : () {
+                                        setDialogState(() {
+                                          ocultarPasswordActual =
+                                              !ocultarPasswordActual;
+                                        });
+                                      },
+                                icon: Icon(
+                                  ocultarPasswordActual
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
                             ),
+                            validator: (value) {
+                              if (!quiereCambiarPassword) {
+                                return null;
+                              }
+
+                              if ((value ?? '').isEmpty) {
+                                return 'Ingresa tu contraseña actual';
+                              }
+
+                              return null;
+                            },
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: passwordNuevaController,
+                            enabled: !guardando,
+                            obscureText: ocultarPasswordNueva,
+                            onChanged: (_) => setDialogState(() {}),
+                            decoration: InputDecoration(
+                              labelText: 'Nueva contraseña',
+                              prefixIcon: const Icon(Icons.lock_outline),
+                              suffixIcon: IconButton(
+                                onPressed: guardando
+                                    ? null
+                                    : () {
+                                        setDialogState(() {
+                                          ocultarPasswordNueva =
+                                              !ocultarPasswordNueva;
+                                        });
+                                      },
+                                icon: Icon(
+                                  ocultarPasswordNueva
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            validator: (value) {
+                              final text = value ?? '';
+
+                              if (!quiereCambiarPassword) {
+                                return null;
+                              }
+
+                              if (text.isEmpty) {
+                                return 'Ingresa la nueva contraseña';
+                              }
+
+                              if (text.length < 8) {
+                                return 'La contraseña debe tener al menos 8 caracteres';
+                              }
+
+                              if (text.length > 72) {
+                                return 'La contraseña no puede superar 72 caracteres';
+                              }
+
+                              if (text == passwordActualController.text) {
+                                return 'La nueva contraseña debe ser diferente';
+                              }
+
+                              return null;
+                            },
                           ),
-                        ),
-                        validator: (value) {
-                          final password = passwordController.text.trim();
-                          final confirmacion = value?.trim() ?? '';
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: confirmarPasswordController,
+                            enabled: !guardando,
+                            obscureText: ocultarConfirmacion,
+                            onChanged: (_) => setDialogState(() {}),
+                            decoration: InputDecoration(
+                              labelText: 'Confirmar nueva contraseña',
+                              prefixIcon: const Icon(Icons.lock_reset_outlined),
+                              suffixIcon: IconButton(
+                                onPressed: guardando
+                                    ? null
+                                    : () {
+                                        setDialogState(() {
+                                          ocultarConfirmacion =
+                                              !ocultarConfirmacion;
+                                        });
+                                      },
+                                icon: Icon(
+                                  ocultarConfirmacion
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (!quiereCambiarPassword) {
+                                return null;
+                              }
 
-                          if (password.isEmpty && confirmacion.isEmpty) {
-                            return null;
-                          }
+                              if ((value ?? '').isEmpty) {
+                                return 'Confirma la nueva contraseña';
+                              }
 
-                          if (confirmacion.isEmpty) {
-                            return 'Confirma la nueva contraseña';
-                          }
+                              if (value != passwordNuevaController.text) {
+                                return 'Las contraseñas no coinciden';
+                              }
 
-                          if (password != confirmacion) {
-                            return 'Las contraseñas no coinciden';
-                          }
-
-                          return null;
-                        },
+                              return null;
+                            },
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'Nota: por ahora esta modificación es solo visual en frontend.',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: guardando
+                          ? null
+                          : () => Navigator.pop(dialogContext),
+                      child: const Text('Cancelar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: guardando
+                          ? null
+                          : () async {
+                              final valido =
+                                  formKey.currentState?.validate() ?? false;
+
+                              if (!valido) {
+                                return;
+                              }
+
+                              setDialogState(() {
+                                guardando = true;
+                              });
+
+                              try {
+                                final cambiaPassword =
+                                    passwordNuevaController.text.isNotEmpty;
+
+                                final usuarioActualizado =
+                                    await PerfilRemoteDataSource()
+                                        .actualizarPerfil(
+                                          nombre: nombreController.text,
+                                          passwordActual: cambiaPassword
+                                              ? passwordActualController.text
+                                              : null,
+                                          passwordNueva: cambiaPassword
+                                              ? passwordNuevaController.text
+                                              : null,
+                                        );
+
+                                ref.read(sessionProvider.notifier).state =
+                                    usuarioActualizado;
+
+                                await LocalStorageService.saveUser(
+                                  usuarioActualizado,
+                                );
+
+                                if (!dialogContext.mounted) {
+                                  return;
+                                }
+
+                                Navigator.pop(dialogContext);
+
+                                if (!context.mounted) {
+                                  return;
+                                }
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Datos actualizados correctamente.',
+                                    ),
+                                  ),
+                                );
+                              } catch (error) {
+                                if (!dialogContext.mounted) {
+                                  return;
+                                }
+
+                                ScaffoldMessenger.of(
+                                  dialogContext,
+                                ).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      error.toString().replaceFirst(
+                                        'Exception: ',
+                                        '',
+                                      ),
+                                    ),
+                                  ),
+                                );
+
+                                setDialogState(() {
+                                  guardando = false;
+                                });
+                              }
+                            },
+                      child: guardando
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Guardar'),
+                    ),
+                  ],
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: const Text('Cancelar'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    final valido = formKey.currentState?.validate() ?? false;
-
-                    if (!valido) {
-                      return;
-                    }
-
-                    final usuarioActualizado = UsuarioModel(
-                      id: usuarioActual.id,
-                      nombre: nombreController.text.trim(),
-                      correo: usuarioActual.correo,
-                      rol: usuarioActual.rol,
-                    );
-
-                    ref.read(sessionProvider.notifier).state =
-                        usuarioActualizado;
-
-                    Navigator.pop(dialogContext);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Datos actualizados correctamente.'),
-                      ),
-                    );
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      nombreController.dispose();
+      passwordActualController.dispose();
+      passwordNuevaController.dispose();
+      confirmarPasswordController.dispose();
+    }
   }
 
   List<Widget> _optionsByRole(
