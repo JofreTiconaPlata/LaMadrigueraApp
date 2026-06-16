@@ -1,3 +1,5 @@
+export type MetodoPagoInput = "EFECTIVO" | "QR" | "TARJETA" | "TRANSFERENCIA";
+
 export interface SalidaCobroResponse {
   id: number;
   ingresoId: number;
@@ -51,8 +53,21 @@ export interface SalidaCobroDetalleResponse extends SalidaCobroResponse {
   } | null;
 }
 
+export interface SolicitarSalidaInput {
+  ingresoId: number;
+}
+
+export interface ValidarPagoInput {
+  metodoPago: MetodoPagoInput;
+  referencia?: string;
+}
+
+/**
+ * Compatibilidad temporal con el flujo antiguo.
+ * Se eliminará cuando Flutter deje de utilizar POST /salidas-cobros.
+ */
 export interface CreateSalidaCobroInput {
   ingresoId: number;
-  metodoPago?: 'EFECTIVO' | 'QR' | 'TARJETA' | 'TRANSFERENCIA';
+  metodoPago?: MetodoPagoInput;
   referencia?: string;
 }

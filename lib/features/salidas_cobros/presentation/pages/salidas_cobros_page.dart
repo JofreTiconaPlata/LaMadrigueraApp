@@ -53,10 +53,23 @@ class _CobroPageState extends ConsumerState<CobroPage> {
     try {
       final dataSource = SalidasCobrosRemoteDataSource();
 
-      final resultado = await dataSource.registrarSalidaCobro(
+      final salidasPendientes = await dataSource.getSalidasCobros(
         ingresoId: ingresoId,
+        estadoPago: 'PENDIENTE',
+      );
+
+      if (salidasPendientes.isEmpty) {
+        throw Exception(
+          'El cliente todavía no solicitó la salida de este vehículo.',
+        );
+      }
+
+      final salidaPendiente = salidasPendientes.first;
+
+      final resultado = await dataSource.validarPago(
+        salidaCobroId: salidaPendiente.id,
         metodoPago: metodoPago,
-        referencia: 'Pago registrado desde app',
+        referencia: 'Pago validado desde app',
       );
 
       if (!mounted) return;
@@ -66,7 +79,7 @@ class _CobroPageState extends ConsumerState<CobroPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Salida y cobro registrados')),
+        const SnackBar(content: Text('Pago validado y salida completada')),
       );
     } catch (error) {
       if (!mounted) return;
@@ -259,13 +272,9 @@ class _CobroPageState extends ConsumerState<CobroPage> {
                 SizedBox(
                   height: 52,
                   child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/vehiculos-estacionados',
-                      (_) => false,
-                    ),
-                    icon: const Icon(Icons.local_parking),
-                    label: const Text('Volver a vehículos estacionados'),
+                    onPressed: () => Navigator.pop(context, true),
+                    icon: const Icon(Icons.dashboard_rounded),
+                    label: const Text('Volver al panel del operador'),
                   ),
                 ),
               ],

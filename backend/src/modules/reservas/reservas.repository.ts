@@ -1,5 +1,5 @@
-import { prisma } from '../../config/prisma';
-import { CreateReservaInput } from './reservas.types';
+import { prisma } from "../../config/prisma";
+import { CreateReservaInput } from "./reservas.types";
 
 export const findClienteByUsuarioIdRepository = (usuarioId: number) => {
   return prisma.cliente.findUnique({
@@ -54,8 +54,24 @@ export const findReservasRepository = (clienteId?: number) => {
           tipo: true,
         },
       },
+      ingreso: {
+        select: {
+          id: true,
+          fechaIngreso: true,
+          estado: true,
+          salidaCobro: {
+            select: {
+              id: true,
+              fechaSalida: true,
+              tiempoTotalMinutos: true,
+              montoTotal: true,
+              estadoPago: true,
+            },
+          },
+        },
+      },
     },
-    orderBy: { id: 'desc' },
+    orderBy: { id: "desc" },
   });
 };
 
@@ -89,8 +105,24 @@ export const findReservasByOperadorRepository = (operadorId: number) => {
           estado: true,
         },
       },
+      ingreso: {
+        select: {
+          id: true,
+          fechaIngreso: true,
+          estado: true,
+          salidaCobro: {
+            select: {
+              id: true,
+              fechaSalida: true,
+              tiempoTotalMinutos: true,
+              montoTotal: true,
+              estadoPago: true,
+            },
+          },
+        },
+      },
     },
-    orderBy: { id: 'desc' },
+    orderBy: { id: "desc" },
   });
 };
 
@@ -126,42 +158,69 @@ export const findReservaByIdRepository = (id: number) => {
 export const createReservaConEspacioRepository = async (
   clienteId: number,
   input: CreateReservaInput,
-  tipoVehiculo: 'AUTO' | 'MOTO' | 'CAMIONETA'
+  tipoVehiculo: "AUTO" | "MOTO" | "CAMIONETA",
 ) => {
   return prisma.$transaction(async (tx) => {
-    const tipoEspacio = tipoVehiculo === 'CAMIONETA' ? 'AUTO' : tipoVehiculo;
+    const reservaActiva = await tx.reserva.findFirst({
+      where: {
+        clienteId,
+        estado: {
+          in: ["PENDIENTE", "ACTIVA"],
+        },
+      },
+    });
+
+    if (reservaActiva) {
+      throw new Error("RESERVA_ACTIVA_EXISTS");
+    }
+
+    const tipoEspacio = tipoVehiculo === "CAMIONETA" ? "AUTO" : tipoVehiculo;
 
     const espacioDisponible = input.espacioId
       ? await tx.espacio.findFirst({
           where: {
             id: input.espacioId,
             parqueoId: input.parqueoId,
-            estado: 'DISPONIBLE',
+            estado: "DISPONIBLE",
             tipo: tipoEspacio,
             parqueo: {
-              estado: 'ACTIVO',
+              estado: "ACTIVO",
             },
           },
         })
       : await tx.espacio.findFirst({
           where: {
             parqueoId: input.parqueoId,
-            estado: 'DISPONIBLE',
+            estado: "DISPONIBLE",
             tipo: tipoEspacio,
             parqueo: {
-              estado: 'ACTIVO',
+              estado: "ACTIVO",
             },
           },
           orderBy: {
-            codigo: 'asc',
+            codigo: "asc",
           },
         });
 
     if (!espacioDisponible) {
-      throw new Error('ESPACIO_DISPONIBLE_NOT_FOUND');
+      throw new Error("ESPACIO_DISPONIBLE_NOT_FOUND");
     }
 
-    const reserva = await tx.reserva.create({
+    const espacioReservado = await tx.espacio.updateMany({
+      where: {
+        id: espacioDisponible.id,
+        estado: "DISPONIBLE",
+      },
+      data: {
+        estado: "RESERVADO",
+      },
+    });
+
+    if (espacioReservado.count !== 1) {
+      throw new Error("ESPACIO_DISPONIBLE_NOT_FOUND");
+    }
+
+    return tx.reserva.create({
       data: {
         clienteId,
         parqueoId: input.parqueoId,
@@ -169,16 +228,9 @@ export const createReservaConEspacioRepository = async (
         vehiculoId: input.vehiculoId,
         fechaInicio: input.fechaInicio,
         fechaFin: input.fechaFin,
-        estado: 'ACTIVA',
+        estado: "ACTIVA",
       },
     });
-
-    await tx.espacio.update({
-      where: { id: espacioDisponible.id },
-      data: { estado: 'OCUPADO' },
-    });
-
-    return reserva;
   });
 };
 
@@ -186,21 +238,39 @@ export const cancelReservaRepository = (id: number) => {
   return prisma.$transaction(async (tx) => {
     const reserva = await tx.reserva.findUnique({
       where: { id },
+      include: {
+        ingreso: {
+          select: {
+            id: true,
+            estado: true,
+          },
+        },
+        espacio: {
+          select: {
+            id: true,
+            estado: true,
+          },
+        },
+      },
     });
 
     if (!reserva) {
-      throw new Error('RESERVA_NOT_FOUND');
+      throw new Error("RESERVA_NOT_FOUND");
+    }
+
+    if (reserva.ingreso) {
+      throw new Error("RESERVA_ALREADY_IN_USE");
     }
 
     const reservaCancelada = await tx.reserva.update({
       where: { id },
-      data: { estado: 'CANCELADA' },
+      data: { estado: "CANCELADA" },
     });
 
-    if (reserva.espacioId) {
+    if (reserva.espacioId && reserva.espacio?.estado === "RESERVADO") {
       await tx.espacio.update({
         where: { id: reserva.espacioId },
-        data: { estado: 'DISPONIBLE' },
+        data: { estado: "DISPONIBLE" },
       });
     }
 

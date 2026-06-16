@@ -44,16 +44,26 @@ class SalidasCobrosRemoteDataSource {
     return SalidaCobroDto.fromJson(data);
   }
 
-  Future<SalidaCobroDto> registrarSalidaCobro({
-    required int ingresoId,
-    String? metodoPago,
+  Future<SalidaCobroDto> solicitarSalida({required int ingresoId}) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '${ApiEndpoints.salidasCobros}/solicitar',
+      data: {'ingresoId': ingresoId},
+    );
+
+    final data = response.data?['data'] as Map<String, dynamic>;
+
+    return SalidaCobroDto.fromJson(data);
+  }
+
+  Future<SalidaCobroDto> validarPago({
+    required int salidaCobroId,
+    required String metodoPago,
     String? referencia,
   }) async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      ApiEndpoints.salidasCobros,
+    final response = await _dio.patch<Map<String, dynamic>>(
+      '${ApiEndpoints.salidasCobros}/$salidaCobroId/validar-pago',
       data: {
-        'ingresoId': ingresoId,
-        'metodoPago': ?metodoPago,
+        'metodoPago': metodoPago,
         'referencia': ?_textoOpcional(referencia),
       },
     );
