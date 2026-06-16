@@ -1,13 +1,30 @@
 import { Router } from 'express';
 import { authMiddleware } from '../../middlewares/auth.middleware';
 import {
-  createSalidaCobroController,
   getSalidaCobroByIdController,
-  getSalidasCobrosController
+  getSalidasCobrosController,
+  solicitarSalidaController,
+  validarPagoController
 } from './salidas-cobros.controller';
 
 export const salidasCobrosRoutes = Router();
 
 salidasCobrosRoutes.get('/', authMiddleware, getSalidasCobrosController);
-salidasCobrosRoutes.get('/:id', authMiddleware, getSalidaCobroByIdController);
-salidasCobrosRoutes.post('/', authMiddleware, createSalidaCobroController);
+
+salidasCobrosRoutes.post(
+  '/solicitar',
+  authMiddleware,
+  solicitarSalidaController
+);
+
+salidasCobrosRoutes.patch(
+  '/:id/validar-pago',
+  authMiddleware,
+  validarPagoController
+);
+
+salidasCobrosRoutes.get(
+  '/:id',
+  authMiddleware,
+  getSalidaCobroByIdController
+);

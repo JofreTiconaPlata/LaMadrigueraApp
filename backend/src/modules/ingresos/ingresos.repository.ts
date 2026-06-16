@@ -198,17 +198,6 @@ export const createIngresoRepository = (
       }
     });
 
-    if (input.reservaId) {
-      await tx.reserva.update({
-        where: {
-          id: input.reservaId
-        },
-        data: {
-          estado: 'COMPLETADA'
-        }
-      });
-    }
-
     const ingresoDetalle = await tx.ingreso.findUnique({
       where: {
         id: ingreso.id

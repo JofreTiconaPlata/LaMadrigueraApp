@@ -49,6 +49,7 @@ class IngresosRemoteDataSource {
   }
 
   Future<IngresoDto> registrarIngreso({
+    int? reservaId,
     required int parqueoId,
     required int espacioId,
     required int vehiculoId,
@@ -56,6 +57,7 @@ class IngresosRemoteDataSource {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.ingresos,
       data: {
+        'reservaId': ?reservaId,
         'parqueoId': parqueoId,
         'espacioId': espacioId,
         'vehiculoId': vehiculoId,

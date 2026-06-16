@@ -1,14 +1,16 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../../middlewares/auth.middleware';
 import {
-  createSalidaCobroSchema,
   salidaCobroIdParamsSchema,
-  salidasCobrosQuerySchema
+  salidasCobrosQuerySchema,
+  solicitarSalidaSchema,
+  validarPagoSchema
 } from './salidas-cobros.schema';
 import {
-  createSalidaCobroService,
   getSalidaCobroByIdService,
-  getSalidasCobrosService
+  getSalidasCobrosService,
+  solicitarSalidaService,
+  validarPagoService
 } from './salidas-cobros.service';
 
 const ensureAuthenticated = (
@@ -36,14 +38,58 @@ const handleSalidaCobroError = (error: unknown, res: Response): void => {
   }
 
   const errorMap: Record<string, { status: number; message: string }> = {
-    OPERADOR_NOT_FOUND: { status: 404, message: 'Operador no encontrado' },
-    USER_NOT_ALLOWED: { status: 403, message: 'El usuario no tiene permisos para salidas/cobros' },
-    INGRESO_NOT_FOUND: { status: 404, message: 'Ingreso no encontrado' },
-    INGRESO_NOT_ACTIVE: { status: 409, message: 'El ingreso no está activo' },
-    SALIDA_ALREADY_EXISTS: { status: 409, message: 'Ya existe una salida/cobro para este ingreso' },
-    SALIDA_COBRO_NOT_FOUND: { status: 404, message: 'Salida/cobro no encontrada' },
-    SALIDA_COBRO_FORBIDDEN: { status: 403, message: 'No puede acceder o cobrar ingresos de otro operador' },
-    TARIFA_NOT_FOUND: { status: 404, message: 'Tarifa activa no encontrada para este vehículo' }
+    CLIENTE_PROFILE_NOT_FOUND: {
+      status: 404,
+      message: 'No se encontró el perfil del cliente'
+    },
+    OPERADOR_NOT_FOUND: {
+      status: 404,
+      message: 'Operador no encontrado'
+    },
+    USER_NOT_ALLOWED: {
+      status: 403,
+      message: 'El usuario no tiene permisos para realizar esta operación'
+    },
+    INGRESO_NOT_FOUND: {
+      status: 404,
+      message: 'Ingreso no encontrado'
+    },
+    INGRESO_NOT_ACTIVE: {
+      status: 409,
+      message: 'El ingreso no está activo'
+    },
+    ESPACIO_NOT_OCCUPIED: {
+      status: 409,
+      message: 'El espacio asociado al ingreso no está ocupado'
+    },
+    SALIDA_ALREADY_EXISTS: {
+      status: 409,
+      message: 'Ya existe una salida/cobro para este ingreso'
+    },
+    SALIDA_ALREADY_COMPLETED: {
+      status: 409,
+      message: 'La salida de este ingreso ya fue procesada'
+    },
+    SALIDA_COBRO_NOT_FOUND: {
+      status: 404,
+      message: 'Salida/cobro no encontrada'
+    },
+    SALIDA_COBRO_FORBIDDEN: {
+      status: 403,
+      message: 'No tiene acceso a esta salida/cobro'
+    },
+    SALIDA_COBRO_NOT_PENDING: {
+      status: 409,
+      message: 'La salida/cobro ya no está pendiente'
+    },
+    PAGO_ALREADY_EXISTS: {
+      status: 409,
+      message: 'El pago ya fue registrado'
+    },
+    TARIFA_NOT_FOUND: {
+      status: 404,
+      message: 'No existe una tarifa activa para este vehículo'
+    }
   };
 
   const mappedError = errorMap[error.message];
@@ -100,6 +146,88 @@ export const getSalidasCobrosController = async (
   }
 };
 
+export const solicitarSalidaController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  const parsedBody = solicitarSalidaSchema.safeParse(req.body);
+
+  if (!parsedBody.success) {
+    res.status(400).json({
+      ok: false,
+      message: 'Datos de solicitud de salida inválidos',
+      errors: parsedBody.error.flatten().fieldErrors
+    });
+    return;
+  }
+
+  try {
+    const salidaCobro = await solicitarSalidaService(parsedBody.data, {
+      id: req.user!.id,
+      rol: req.user!.rol
+    });
+
+    res.status(201).json({
+      ok: true,
+      message: 'Solicitud de salida registrada correctamente',
+      data: salidaCobro
+    });
+  } catch (error) {
+    handleSalidaCobroError(error, res);
+  }
+};
+
+export const validarPagoController = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  if (!ensureAuthenticated(req, res)) {
+    return;
+  }
+
+  const parsedParams = salidaCobroIdParamsSchema.safeParse(req.params);
+  const parsedBody = validarPagoSchema.safeParse(req.body);
+
+  if (!parsedParams.success || !parsedBody.success) {
+    res.status(400).json({
+      ok: false,
+      message: 'Datos de validación de pago inválidos',
+      errors: {
+        params: parsedParams.success
+          ? undefined
+          : parsedParams.error.flatten().fieldErrors,
+        body: parsedBody.success
+          ? undefined
+          : parsedBody.error.flatten().fieldErrors
+      }
+    });
+    return;
+  }
+
+  try {
+    const salidaCobro = await validarPagoService(
+      parsedParams.data.id,
+      parsedBody.data,
+      {
+        id: req.user!.id,
+        rol: req.user!.rol
+      }
+    );
+
+    res.status(200).json({
+      ok: true,
+      message: 'Pago validado y salida finalizada correctamente',
+      data: salidaCobro
+    });
+  } catch (error) {
+    handleSalidaCobroError(error, res);
+  }
+};
+
 export const getSalidaCobroByIdController = async (
   req: AuthenticatedRequest,
   res: Response
@@ -127,41 +255,6 @@ export const getSalidaCobroByIdController = async (
 
     res.status(200).json({
       ok: true,
-      data: salidaCobro
-    });
-  } catch (error) {
-    handleSalidaCobroError(error, res);
-  }
-};
-
-export const createSalidaCobroController = async (
-  req: AuthenticatedRequest,
-  res: Response
-): Promise<void> => {
-  if (!ensureAuthenticated(req, res)) {
-    return;
-  }
-
-  const parsedBody = createSalidaCobroSchema.safeParse(req.body);
-
-  if (!parsedBody.success) {
-    res.status(400).json({
-      ok: false,
-      message: 'Datos de salida/cobro inválidos',
-      errors: parsedBody.error.flatten().fieldErrors
-    });
-    return;
-  }
-
-  try {
-    const salidaCobro = await createSalidaCobroService(
-      parsedBody.data,
-      req.user!.id
-    );
-
-    res.status(201).json({
-      ok: true,
-      message: 'Salida y cobro registrados correctamente',
       data: salidaCobro
     });
   } catch (error) {
