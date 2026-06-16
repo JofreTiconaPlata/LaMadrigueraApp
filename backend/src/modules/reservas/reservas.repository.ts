@@ -54,6 +54,13 @@ export const findReservasRepository = (clienteId?: number) => {
           tipo: true,
         },
       },
+        ingreso: {
+          select: {
+            id: true,
+            fechaIngreso: true,
+            estado: true,
+          },
+        },
     },
     orderBy: { id: 'desc' },
   });
