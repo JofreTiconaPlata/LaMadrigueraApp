@@ -307,10 +307,12 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
   }
 
   String _formatearFecha(DateTime fecha) {
+    final fechaLocal = fecha.toLocal();
+
     String two(int value) => value.toString().padLeft(2, '0');
 
-    return '${two(fecha.day)}/${two(fecha.month)}/${fecha.year} '
-        '${two(fecha.hour)}:${two(fecha.minute)}';
+    return '${two(fechaLocal.day)}/${two(fechaLocal.month)}/${fechaLocal.year} '
+        '${two(fechaLocal.hour)}:${two(fechaLocal.minute)}';
   }
 
   String _parqueoMasUsado(List<ReservaDto> reservas) {
@@ -375,7 +377,11 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
     );
   }
 
-  Widget _chartCard({required int autos, required int motos}) {
+  Widget _chartCard({
+    required String title,
+    required int autos,
+    required int motos,
+  }) {
     final total = autos + motos;
 
     if (total == 0) {
@@ -399,8 +405,8 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
       );
     }
 
-    final porcentajeAutos = ((autos / total) * 100).round();
-    final porcentajeMotos = ((motos / total) * 100).round();
+    final porcentajeAutos = autos > 0 ? ((autos / total) * 100).round() : 0;
+    final porcentajeMotos = motos > 0 ? ((motos / total) * 100).round() : 0;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -411,9 +417,9 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
       ),
       child: Column(
         children: [
-          const Text(
-            'Comparación Autos vs Motos',
-            style: TextStyle(
+          Text(
+            title,
+            style: const TextStyle(
               color: AppTheme.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 17,
@@ -427,26 +433,28 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
                 centerSpaceRadius: 46,
                 sectionsSpace: 3,
                 sections: [
-                  PieChartSectionData(
-                    value: autos.toDouble(),
-                    title: '$porcentajeAutos%',
-                    color: AppTheme.primary,
-                    radius: 62,
-                    titleStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  if (autos > 0)
+                    PieChartSectionData(
+                      value: autos.toDouble(),
+                      title: '$porcentajeAutos%',
+                      color: AppTheme.primary,
+                      radius: 62,
+                      titleStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  PieChartSectionData(
-                    value: motos.toDouble(),
-                    title: '$porcentajeMotos%',
-                    color: Colors.orange,
-                    radius: 62,
-                    titleStyle: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  if (motos > 0)
+                    PieChartSectionData(
+                      value: motos.toDouble(),
+                      title: '$porcentajeMotos%',
+                      color: Colors.orange,
+                      radius: 62,
+                      titleStyle: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -455,9 +463,11 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendItem(color: AppTheme.primary, label: 'Autos: $autos'),
-              const SizedBox(width: 16),
-              _LegendItem(color: Colors.orange, label: 'Motos: $motos'),
+              if (autos > 0)
+                _LegendItem(color: AppTheme.primary, label: 'Autos: $autos'),
+              if (autos > 0 && motos > 0) const SizedBox(width: 16),
+              if (motos > 0)
+                _LegendItem(color: Colors.orange, label: 'Motos: $motos'),
             ],
           ),
         ],
@@ -584,8 +594,19 @@ class _DetalleReportePageState extends State<_DetalleReportePage> {
                 ),
                 const SizedBox(height: 18),
                 _chartCard(
-                  autos: autosPeriodo.length,
-                  motos: motosPeriodo.length,
+                  title: widget.tipo == TipoReporteVehiculo.general
+                      ? 'Comparación Autos vs Motos'
+                      : 'Distribución de ${widget.tipo.label}',
+                  autos: widget.tipo == TipoReporteVehiculo.general
+                      ? autosPeriodo.length
+                      : widget.tipo == TipoReporteVehiculo.auto
+                      ? seleccionadas.length
+                      : 0,
+                  motos: widget.tipo == TipoReporteVehiculo.general
+                      ? motosPeriodo.length
+                      : widget.tipo == TipoReporteVehiculo.moto
+                      ? seleccionadas.length
+                      : 0,
                 ),
                 const SizedBox(height: 16),
                 if (widget.tipo == TipoReporteVehiculo.general) ...[

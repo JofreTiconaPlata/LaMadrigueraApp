@@ -1493,14 +1493,12 @@ class _DashboardOverlayPanelState
   }
 
   String _formatearFechaHora(DateTime fecha) {
-    final local = fecha.toLocal();
-    final dia = local.day.toString().padLeft(2, '0');
-    final mes = local.month.toString().padLeft(2, '0');
-    final anio = local.year.toString();
-    final hora = local.hour.toString().padLeft(2, '0');
-    final minuto = local.minute.toString().padLeft(2, '0');
+    final fechaLocal = fecha.toLocal();
 
-    return '$dia/$mes/$anio $hora:$minuto';
+    String two(int value) => value.toString().padLeft(2, '0');
+
+    return '${two(fechaLocal.day)}/${two(fechaLocal.month)}/${fechaLocal.year} '
+        '${two(fechaLocal.hour)}:${two(fechaLocal.minute)}';
   }
 
   String _formatearTiempoReserva(DateTime inicio, DateTime fin) {

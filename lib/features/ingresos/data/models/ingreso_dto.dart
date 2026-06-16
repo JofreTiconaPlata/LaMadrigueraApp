@@ -32,7 +32,7 @@ class IngresoDto {
       espacioId: json['espacioId'] as int,
       vehiculoId: json['vehiculoId'] as int,
       operadorId: json['operadorId'] as int,
-      fechaIngreso: DateTime.parse(json['fechaIngreso'] as String),
+      fechaIngreso: DateTime.parse(json['fechaIngreso'] as String).toLocal(),
       estado: json['estado'] as String,
       parqueo: IngresoParqueoDto.fromJson(
         json['parqueo'] as Map<String, dynamic>,

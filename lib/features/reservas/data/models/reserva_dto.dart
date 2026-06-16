@@ -104,8 +104,8 @@ class ReservaDto {
       parqueoId: json['parqueoId'] as int,
       espacioId: json['espacioId'] as int?,
       vehiculoId: json['vehiculoId'] as int,
-      fechaInicio: DateTime.parse(json['fechaInicio'] as String),
-      fechaFin: DateTime.parse(json['fechaFin'] as String),
+      fechaInicio: DateTime.parse(json['fechaInicio'] as String).toLocal(),
+      fechaFin: DateTime.parse(json['fechaFin'] as String).toLocal(),
       estado: json['estado'] as String,
       parqueo: parqueoJson is Map<String, dynamic>
           ? ReservaParqueoDto.fromJson(parqueoJson)
