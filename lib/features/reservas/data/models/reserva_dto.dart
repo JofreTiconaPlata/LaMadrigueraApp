@@ -58,24 +58,60 @@ class ReservaEspacioDto {
   }
 }
 
+class ReservaSalidaCobroDto {
+  const ReservaSalidaCobroDto({
+    required this.id,
+    required this.fechaSalida,
+    required this.tiempoTotalMinutos,
+    required this.montoTotal,
+    required this.estadoPago,
+  });
+
+  final int id;
+  final DateTime fechaSalida;
+  final int tiempoTotalMinutos;
+  final double montoTotal;
+  final String estadoPago;
+
+  bool get estaPendiente => estadoPago == 'PENDIENTE';
+  bool get estaPagada => estadoPago == 'PAGADO';
+
+  factory ReservaSalidaCobroDto.fromJson(Map<String, dynamic> json) {
+    return ReservaSalidaCobroDto(
+      id: json['id'] as int,
+      fechaSalida: DateTime.parse(json['fechaSalida'] as String).toLocal(),
+      tiempoTotalMinutos: json['tiempoTotalMinutos'] as int,
+      montoTotal: (json['montoTotal'] as num).toDouble(),
+      estadoPago: json['estadoPago'] as String,
+    );
+  }
+}
+
 class ReservaIngresoDto {
   const ReservaIngresoDto({
     required this.id,
     required this.fechaIngreso,
     required this.estado,
+    required this.salidaCobro,
   });
 
   final int id;
   final DateTime fechaIngreso;
   final String estado;
+  final ReservaSalidaCobroDto? salidaCobro;
 
   bool get estaActivo => estado == 'ACTIVO';
 
   factory ReservaIngresoDto.fromJson(Map<String, dynamic> json) {
+    final salidaCobroJson = json['salidaCobro'];
+
     return ReservaIngresoDto(
       id: json['id'] as int,
       fechaIngreso: DateTime.parse(json['fechaIngreso'] as String).toLocal(),
       estado: json['estado'] as String,
+      salidaCobro: salidaCobroJson is Map<String, dynamic>
+          ? ReservaSalidaCobroDto.fromJson(salidaCobroJson)
+          : null,
     );
   }
 }
@@ -117,12 +153,21 @@ class ReservaDto {
     return estado == 'ACTIVA' && ingreso?.estado == 'ACTIVO';
   }
 
+  bool get salidaPendiente {
+    return vehiculoEstacionado &&
+        ingreso?.salidaCobro?.estadoPago == 'PENDIENTE';
+  }
+
+  bool get salidaPagada {
+    return ingreso?.salidaCobro?.estadoPago == 'PAGADO';
+  }
+
   bool get puedeCancelar {
     return esperandoIngreso;
   }
 
   bool get puedeSolicitarSalida {
-    return vehiculoEstacionado;
+    return vehiculoEstacionado && ingreso?.salidaCobro == null;
   }
 
   bool get estaEnProgreso {
@@ -130,7 +175,9 @@ class ReservaDto {
   }
 
   bool get estaTerminada {
-    return !estaEnProgreso;
+    return estado == 'COMPLETADA' ||
+        estado == 'FINALIZADA' ||
+        estado == 'CANCELADA';
   }
 
   factory ReservaDto.fromJson(Map<String, dynamic> json) {

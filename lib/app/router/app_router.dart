@@ -184,6 +184,7 @@ class AppRouter {
 
       case RouteNames.salidasCobros:
         return MaterialPageRoute(
+          settings: settings,
           builder: (_) => const _RoleRequiredPage(
             allowedRoles: [RolEnum.operador],
             child: CobroPage(),

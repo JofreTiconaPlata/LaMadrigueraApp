@@ -5,6 +5,7 @@ import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 import 'package:la_madriguera/features/reservas/presentation/providers/reservas_provider.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_card.dart';
+import 'package:la_madriguera/features/salidas_cobros/data/datasources/salidas_cobros_remote_datasource.dart';
 
 class MisReservasPage extends ConsumerStatefulWidget {
   const MisReservasPage({super.key});
@@ -15,6 +16,7 @@ class MisReservasPage extends ConsumerStatefulWidget {
 
 class _MisReservasPageState extends ConsumerState<MisReservasPage> {
   final Set<int> _reservasCancelando = <int>{};
+  final Set<int> _reservasSolicitandoSalida = <int>{};
 
   Future<void> _recargar() async {
     ref.invalidate(misReservasProvider);
@@ -89,6 +91,83 @@ class _MisReservasPageState extends ConsumerState<MisReservasPage> {
     }
   }
 
+  Future<void> _solicitarSalida(ReservaDto reserva) async {
+    final ingreso = reserva.ingreso;
+
+    if (!reserva.puedeSolicitarSalida ||
+        ingreso == null ||
+        _reservasSolicitandoSalida.contains(reserva.id)) {
+      return;
+    }
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Solicitar salida'),
+          content: Text(
+            '¿Deseas solicitar la salida del vehículo '
+            '${reserva.vehiculo?.placa ?? ''}? '
+            'El tiempo y el monto quedarán calculados hasta este momento.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Volver'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.logout),
+              label: const Text('Solicitar salida'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmado != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _reservasSolicitandoSalida.add(reserva.id);
+    });
+
+    try {
+      final dataSource = SalidasCobrosRemoteDataSource();
+
+      await dataSource.solicitarSalida(ingresoId: ingreso.id);
+
+      ref.invalidate(misReservasProvider);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Salida solicitada. Dirígete al operador para validar el pago.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo solicitar la salida: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reservasSolicitandoSalida.remove(reserva.id);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final reservasAsync = ref.watch(misReservasProvider);
@@ -136,7 +215,9 @@ class _MisReservasPageState extends ConsumerState<MisReservasPage> {
                       'Cuando reserves un espacio activo, aparecerá aquí.',
                   onRefresh: _recargar,
                   onCancelar: _cancelarReserva,
+                  onSolicitarSalida: _solicitarSalida,
                   reservasCancelando: _reservasCancelando,
+                  reservasSolicitandoSalida: _reservasSolicitandoSalida,
                 ),
                 _ListaReservas(
                   reservas: terminadas,
@@ -161,7 +242,9 @@ class _ListaReservas extends StatelessWidget {
     required this.emptySubtitle,
     required this.onRefresh,
     this.onCancelar,
+    this.onSolicitarSalida,
     this.reservasCancelando = const <int>{},
+    this.reservasSolicitandoSalida = const <int>{},
   });
 
   final List<ReservaDto> reservas;
@@ -169,7 +252,9 @@ class _ListaReservas extends StatelessWidget {
   final String emptySubtitle;
   final Future<void> Function() onRefresh;
   final ValueChanged<ReservaDto>? onCancelar;
+  final ValueChanged<ReservaDto>? onSolicitarSalida;
   final Set<int> reservasCancelando;
+  final Set<int> reservasSolicitandoSalida;
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +304,11 @@ class _ListaReservas extends StatelessWidget {
               cancelando: reservasCancelando.contains(reserva.id),
               onCancelar: reserva.puedeCancelar && onCancelar != null
                   ? () => onCancelar!(reserva)
+                  : null,
+              solicitandoSalida: reservasSolicitandoSalida.contains(reserva.id),
+              onSolicitarSalida:
+                  reserva.puedeSolicitarSalida && onSolicitarSalida != null
+                  ? () => onSolicitarSalida!(reserva)
                   : null,
             ),
           ),

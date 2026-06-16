@@ -1003,7 +1003,7 @@ class _DashboardOverlayPanelState
       case 'Ingresos':
         return 'Registra el ingreso de vehículos al parqueo y mantén actualizado el control operativo.';
       case 'Cobros':
-        return 'Consulta el historial de cobros realizados.';
+        return 'Valida pagos pendientes y consulta el historial de cobros realizados.';
       default:
         return 'Acceso rápido desde el panel principal de La Madriguera.';
     }
@@ -1077,7 +1077,7 @@ class _DashboardOverlayPanelState
             icon: Icons.point_of_sale_rounded,
             title: 'Finalizar salida',
             subtitle:
-                'Calcula el cobro y registra la salida del vehículo estacionado.',
+                'Valida el pago solicitado y completa la salida del vehículo.',
           ),
           _OverlayInfoItem(
             icon: Icons.receipt_long_rounded,
@@ -1591,21 +1591,34 @@ class _DashboardOverlayPanelState
             ),
             ...vehiculosActivos.map((reserva) {
               final vehiculo = reserva.vehiculo;
+              final ingreso = reserva.ingreso;
               final tipoVehiculo = vehiculo?.tipo ?? 'Sin tipo';
               final placa = vehiculo?.placa ?? 'Sin placa';
+              final salidaPendiente = reserva.salidaPendiente;
 
               return Card(
                 child: ListTile(
+                  onTap: salidaPendiente && ingreso != null
+                      ? () => _abrirValidacionPago(reserva)
+                      : null,
                   leading: Icon(
                     tipoVehiculo == 'MOTO'
                         ? Icons.two_wheeler_rounded
                         : Icons.directions_car_rounded,
-                    color: AppTheme.primary,
+                    color: salidaPendiente ? Colors.orange : AppTheme.primary,
                   ),
                   title: Text(
                     '$tipoVehiculo - $placa',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
+                  subtitle: Text(
+                    salidaPendiente
+                        ? 'Salida solicitada · Validar pago'
+                        : 'Vehículo dentro del parqueo',
+                  ),
+                  trailing: salidaPendiente
+                      ? const Icon(Icons.chevron_right)
+                      : null,
                 ),
               );
             }),
@@ -1624,32 +1637,24 @@ class _DashboardOverlayPanelState
         '${two(fechaLocal.hour)}:${two(fechaLocal.minute)}';
   }
 
-  String _formatearTiempoReserva(DateTime inicio, DateTime fin) {
-    final minutosTotales = fin.difference(inicio).inMinutes.abs();
-    final horas = minutosTotales ~/ 60;
-    final minutos = minutosTotales % 60;
+  Future<void> _abrirValidacionPago(ReservaDto reserva) async {
+    final ingreso = reserva.ingreso;
 
-    if (horas <= 0) {
-      return '$minutos min';
+    if (!reserva.salidaPendiente || ingreso == null) {
+      return;
     }
 
-    if (minutos == 0) {
-      return '$horas h';
+    await Navigator.pushNamed(
+      context,
+      RouteNames.salidasCobros,
+      arguments: ingreso.id,
+    );
+
+    if (!mounted) {
+      return;
     }
 
-    return '$horas h $minutos min';
-  }
-
-  double _calcularMontoReserva(DateTime inicio, DateTime fin) {
-    const tarifaHora = 5.0;
-    final minutos = fin.difference(inicio).inMinutes.abs();
-
-    if (minutos <= 0) {
-      return tarifaHora;
-    }
-
-    final horasCobradas = (minutos / 60).ceil();
-    return horasCobradas * tarifaHora;
+    setState(() {});
   }
 
   Widget _buildCobrosOperadorView() {
@@ -1686,18 +1691,75 @@ class _DashboardOverlayPanelState
 
         final reservas = snapshot.data ?? [];
 
-        final cobros = reservas.where((reserva) {
-          return reserva.estado != 'CANCELADA';
-        }).toList();
+        final pendientes = reservas
+            .where((reserva) => reserva.salidaPendiente)
+            .toList();
 
-        if (cobros.isEmpty) {
+        final pagados = reservas
+            .where((reserva) => reserva.salidaPagada)
+            .toList();
+
+        if (pendientes.isEmpty && pagados.isEmpty) {
           return const Card(
             child: Padding(
               padding: EdgeInsets.all(24),
               child: Text(
-                'No hay tarifas registradas todavía.',
+                'No hay salidas pendientes ni pagos registrados.',
                 textAlign: TextAlign.center,
               ),
+            ),
+          );
+        }
+
+        Widget buildCobroTile(ReservaDto reserva, {required bool pendiente}) {
+          final vehiculo = reserva.vehiculo;
+          final ingreso = reserva.ingreso;
+          final salida = ingreso?.salidaCobro;
+
+          final tipoVehiculo = vehiculo?.tipo ?? 'Sin tipo';
+          final placa = vehiculo?.placa ?? 'Sin placa';
+
+          if (ingreso == null || salida == null) {
+            return const SizedBox.shrink();
+          }
+
+          return Card(
+            child: ListTile(
+              onTap: pendiente ? () => _abrirValidacionPago(reserva) : null,
+              leading: CircleAvatar(
+                backgroundColor: pendiente
+                    ? const Color(0xFFFFF3E0)
+                    : const Color(0xFFE8F5E9),
+                child: Icon(
+                  tipoVehiculo == 'MOTO'
+                      ? Icons.two_wheeler_rounded
+                      : Icons.directions_car_rounded,
+                  color: pendiente ? Colors.orange : AppTheme.primary,
+                ),
+              ),
+              title: Text(
+                '$tipoVehiculo - $placa',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text(
+                'Entrada: ${_formatearFechaHora(ingreso.fechaIngreso)}\n'
+                'Salida solicitada: '
+                '${_formatearFechaHora(salida.fechaSalida)}\n'
+                'Tiempo: ${salida.tiempoTotalMinutos} min\n'
+                'Monto: Bs ${salida.montoTotal.toStringAsFixed(2)}\n'
+                'Pago: ${pendiente ? 'Pendiente de validación' : 'Pagado'}',
+              ),
+              isThreeLine: true,
+              trailing: pendiente
+                  ? const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.payments_outlined),
+                        SizedBox(height: 2),
+                        Text('Validar', style: TextStyle(fontSize: 11)),
+                      ],
+                    )
+                  : const Icon(Icons.check_circle, color: AppTheme.primary),
             ),
           );
         }
@@ -1705,55 +1767,40 @@ class _DashboardOverlayPanelState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 8),
-              child: Text(
-                'Historial de cobros',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
+            if (pendientes.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Pendientes de validación',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-            ...cobros.map((reserva) {
-              final vehiculo = reserva.vehiculo;
-              final tipoVehiculo = vehiculo?.tipo ?? 'Sin tipo';
-              final placa = vehiculo?.placa ?? 'Sin placa';
-
-              final tiempo = _formatearTiempoReserva(
-                reserva.fechaInicio,
-                reserva.fechaFin,
-              );
-
-              final monto = _calcularMontoReserva(
-                reserva.fechaInicio,
-                reserva.fechaFin,
-              );
-
-              return Card(
-                child: ListTile(
-                  leading: Icon(
-                    tipoVehiculo == 'MOTO'
-                        ? Icons.two_wheeler_rounded
-                        : Icons.directions_car_rounded,
-                    color: AppTheme.primary,
+              ...pendientes.map(
+                (reserva) => buildCobroTile(reserva, pendiente: true),
+              ),
+            ],
+            if (pendientes.isNotEmpty && pagados.isNotEmpty)
+              const SizedBox(height: 18),
+            if (pagados.isNotEmpty) ...[
+              const Padding(
+                padding: EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Historial de cobros pagados',
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
                   ),
-                  title: Text(
-                    '$tipoVehiculo - $placa',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    'Entrada: ${_formatearFechaHora(reserva.fechaInicio)}\n'
-                    'Salida: ${_formatearFechaHora(reserva.fechaFin)}\n'
-                    'Tiempo: $tiempo\n'
-                    'Tarifa: Bs 5.00 por hora\n'
-                    'Monto: Bs ${monto.toStringAsFixed(2)}',
-                  ),
-                  isThreeLine: true,
                 ),
-              );
-            }),
+              ),
+              ...pagados.map(
+                (reserva) => buildCobroTile(reserva, pendiente: false),
+              ),
+            ],
           ],
         );
       },
