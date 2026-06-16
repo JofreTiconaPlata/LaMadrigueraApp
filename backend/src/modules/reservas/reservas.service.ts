@@ -44,6 +44,13 @@ type ReservaConRelaciones = {
     id: number;
     fechaIngreso: Date;
     estado: string;
+    salidaCobro?: {
+      id: number;
+      fechaSalida: Date;
+      tiempoTotalMinutos: number;
+      montoTotal: unknown;
+      estadoPago: string;
+    } | null;
   } | null;
 };
 
@@ -84,6 +91,16 @@ const toReservaResponse = (reserva: ReservaConRelaciones): ReservaResponse => ({
         id: reserva.ingreso.id,
         fechaIngreso: reserva.ingreso.fechaIngreso,
         estado: reserva.ingreso.estado,
+        salidaCobro: reserva.ingreso.salidaCobro
+          ? {
+              id: reserva.ingreso.salidaCobro.id,
+              fechaSalida: reserva.ingreso.salidaCobro.fechaSalida,
+              tiempoTotalMinutos:
+                reserva.ingreso.salidaCobro.tiempoTotalMinutos,
+              montoTotal: Number(reserva.ingreso.salidaCobro.montoTotal),
+              estadoPago: reserva.ingreso.salidaCobro.estadoPago,
+            }
+          : null,
       }
     : null,
 });

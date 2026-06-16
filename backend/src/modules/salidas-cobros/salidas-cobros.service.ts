@@ -1,11 +1,15 @@
 import {
   CreateSalidaCobroInput,
-  SalidaCobroDetalleResponse
+  SalidaCobroDetalleResponse,
+  SolicitarSalidaInput,
+  ValidarPagoInput
 } from './salidas-cobros.types';
 import {
   createSalidaCobroRepository,
   findSalidaCobroByIdRepository,
-  findSalidasCobrosRepository
+  findSalidasCobrosRepository,
+  solicitarSalidaRepository,
+  validarPagoRepository
 } from './salidas-cobros.repository';
 
 type RolUsuario = 'CLIENTE' | 'OPERADOR' | 'ADMIN';
@@ -119,7 +123,10 @@ export const getSalidasCobrosService = async (
   usuario: { id: number; rol: RolUsuario }
 ): Promise<SalidaCobroDetalleResponse[]> => {
   if (usuario.rol === 'ADMIN') {
-    const salidasCobros = await findSalidasCobrosRepository(ingresoId, estadoPago);
+    const salidasCobros = await findSalidasCobrosRepository(
+      ingresoId,
+      estadoPago
+    );
 
     return salidasCobros.map(toSalidaCobroDetalleResponse);
   }
@@ -152,6 +159,41 @@ export const getSalidaCobroByIdService = async (
   return toSalidaCobroDetalleResponse(salidaCobro);
 };
 
+export const solicitarSalidaService = async (
+  input: SolicitarSalidaInput,
+  usuario: { id: number; rol: RolUsuario }
+): Promise<SalidaCobroDetalleResponse> => {
+  if (usuario.rol !== 'CLIENTE') {
+    throw new Error('USER_NOT_ALLOWED');
+  }
+
+  const salidaCobro = await solicitarSalidaRepository(input, usuario.id);
+
+  return toSalidaCobroDetalleResponse(salidaCobro);
+};
+
+export const validarPagoService = async (
+  salidaCobroId: number,
+  input: ValidarPagoInput,
+  usuario: { id: number; rol: RolUsuario }
+): Promise<SalidaCobroDetalleResponse> => {
+  if (usuario.rol !== 'OPERADOR') {
+    throw new Error('USER_NOT_ALLOWED');
+  }
+
+  const salidaCobro = await validarPagoRepository(
+    salidaCobroId,
+    input,
+    usuario.id
+  );
+
+  return toSalidaCobroDetalleResponse(salidaCobro);
+};
+
+/**
+ * Compatibilidad temporal.
+ * No debe exponerse en rutas mientras mezcle salida y finalización.
+ */
 export const createSalidaCobroService = async (
   input: CreateSalidaCobroInput,
   operadorId: number
