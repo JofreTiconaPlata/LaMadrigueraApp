@@ -6,15 +6,91 @@ import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 import 'package:la_madriguera/features/reservas/presentation/providers/reservas_provider.dart';
 import 'package:la_madriguera/features/reservas/presentation/widgets/reserva_card.dart';
 
-class MisReservasPage extends ConsumerWidget {
+class MisReservasPage extends ConsumerStatefulWidget {
   const MisReservasPage({super.key});
 
-  Future<void> _recargar(WidgetRef ref) async {
+  @override
+  ConsumerState<MisReservasPage> createState() => _MisReservasPageState();
+}
+
+class _MisReservasPageState extends ConsumerState<MisReservasPage> {
+  final Set<int> _reservasCancelando = <int>{};
+
+  Future<void> _recargar() async {
     ref.invalidate(misReservasProvider);
+    await ref.read(misReservasProvider.future);
+  }
+
+  Future<void> _cancelarReserva(ReservaDto reserva) async {
+    if (!reserva.puedeCancelar || _reservasCancelando.contains(reserva.id)) {
+      return;
+    }
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final espacio = reserva.espacio?.codigo ?? 'asignado';
+
+        return AlertDialog(
+          title: const Text('Cancelar reserva'),
+          content: Text(
+            '¿Deseas cancelar la reserva #${reserva.id}? '
+            'El espacio $espacio volverá a estar disponible.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Volver'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Cancelar reserva'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmado != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _reservasCancelando.add(reserva.id);
+    });
+
+    try {
+      await ref.read(reservasDataSourceProvider).cancelarReserva(reserva.id);
+
+      ref.invalidate(misReservasProvider);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Reserva cancelada y espacio liberado.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cancelar la reserva: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reservasCancelando.remove(reserva.id);
+        });
+      }
+    }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final reservasAsync = ref.watch(misReservasProvider);
 
     return DefaultTabController(
@@ -58,14 +134,16 @@ class MisReservasPage extends ConsumerWidget {
                   emptyTitle: 'No tienes reservas en progreso.',
                   emptySubtitle:
                       'Cuando reserves un espacio activo, aparecerá aquí.',
-                  onRefresh: () => _recargar(ref),
+                  onRefresh: _recargar,
+                  onCancelar: _cancelarReserva,
+                  reservasCancelando: _reservasCancelando,
                 ),
                 _ListaReservas(
                   reservas: terminadas,
                   emptyTitle: 'Aún no tienes reservas terminadas.',
                   emptySubtitle:
                       'Cuando finalices un parqueo, aparecerá aquí como historial.',
-                  onRefresh: () => _recargar(ref),
+                  onRefresh: _recargar,
                 ),
               ],
             );
@@ -82,12 +160,16 @@ class _ListaReservas extends StatelessWidget {
     required this.emptyTitle,
     required this.emptySubtitle,
     required this.onRefresh,
+    this.onCancelar,
+    this.reservasCancelando = const <int>{},
   });
 
   final List<ReservaDto> reservas;
   final String emptyTitle;
   final String emptySubtitle;
   final Future<void> Function() onRefresh;
+  final ValueChanged<ReservaDto>? onCancelar;
+  final Set<int> reservasCancelando;
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +213,15 @@ class _ListaReservas extends StatelessWidget {
             style: const TextStyle(color: AppTheme.textSecondary),
           ),
           const SizedBox(height: 16),
-          ...reservas.map((reserva) => ReservaCard(reserva: reserva)),
+          ...reservas.map(
+            (reserva) => ReservaCard(
+              reserva: reserva,
+              cancelando: reservasCancelando.contains(reserva.id),
+              onCancelar: reserva.puedeCancelar && onCancelar != null
+                  ? () => onCancelar!(reserva)
+                  : null,
+            ),
+          ),
         ],
       ),
     );

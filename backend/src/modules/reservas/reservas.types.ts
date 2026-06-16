@@ -16,6 +16,12 @@ export interface ReservaEspacioResponse {
   tipo: string;
 }
 
+export interface ReservaIngresoResponse {
+  id: number;
+  fechaIngreso: Date;
+  estado: string;
+}
+
 export interface ReservaResponse {
   id: number;
   clienteId: number;
@@ -30,6 +36,7 @@ export interface ReservaResponse {
   parqueo?: ReservaParqueoResponse;
   vehiculo?: ReservaVehiculoResponse;
   espacio?: ReservaEspacioResponse | null;
+  ingreso?: ReservaIngresoResponse | null;
 }
 
 export interface CreateReservaInput {

@@ -4,9 +4,16 @@ import 'package:la_madriguera/app/theme/app_theme.dart';
 import 'package:la_madriguera/features/reservas/data/models/reserva_dto.dart';
 
 class ReservaCard extends StatelessWidget {
-  const ReservaCard({super.key, required this.reserva});
+  const ReservaCard({
+    super.key,
+    required this.reserva,
+    this.onCancelar,
+    this.cancelando = false,
+  });
 
   final ReservaDto reserva;
+  final VoidCallback? onCancelar;
+  final bool cancelando;
 
   String _dosDigitos(int value) => value.toString().padLeft(2, '0');
 
@@ -18,15 +25,22 @@ class ReservaCard extends StatelessWidget {
   }
 
   String get _estadoLabel {
+    if (reserva.esperandoIngreso) {
+      return 'ESPERANDO INGRESO';
+    }
+
+    if (reserva.vehiculoEstacionado) {
+      return 'VEHÍCULO ESTACIONADO';
+    }
+
     switch (reserva.estado) {
-      case 'ACTIVA':
-        return 'EN PROGRESO';
-      case 'PENDIENTE':
-        return 'PENDIENTE';
       case 'COMPLETADA':
       case 'FINALIZADA':
+        return 'FINALIZADA';
       case 'CANCELADA':
-        return 'TERMINADA';
+        return 'CANCELADA';
+      case 'PENDIENTE':
+        return 'PENDIENTE';
       default:
         return reserva.estado;
     }
@@ -156,14 +170,39 @@ class ReservaCard extends StatelessWidget {
             const Divider(height: 22),
             _infoRow(
               icon: Icons.login,
-              label: 'Entrada',
-              value: _formatearFecha(reserva.fechaInicio),
+              label: reserva.ingreso == null
+                  ? 'Inicio reservado'
+                  : 'Ingreso real',
+              value: _formatearFecha(
+                reserva.ingreso?.fechaIngreso ?? reserva.fechaInicio,
+              ),
             ),
             _infoRow(
               icon: Icons.logout,
-              label: reserva.estaEnProgreso ? 'Salida estimada' : 'Salida',
+              label: reserva.esperandoIngreso
+                  ? 'Fin estimado'
+                  : 'Fin de reserva',
               value: _formatearFecha(reserva.fechaFin),
             ),
+            if (reserva.puedeCancelar) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: cancelando ? null : onCancelar,
+                  icon: cancelando
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.cancel_outlined),
+                  label: Text(
+                    cancelando ? 'Cancelando...' : 'Cancelar reserva',
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

@@ -7,8 +7,6 @@ import 'package:la_madriguera/features/espacios/data/models/espacio_dto.dart';
 import 'package:la_madriguera/features/espacios/presentation/pages/espacios_page.dart'
     show espaciosPageProvider;
 import 'package:la_madriguera/features/parqueos/domain/entities/parqueo_entity.dart';
-import 'package:la_madriguera/features/reservas/domain/entities/reserva_activa_entity.dart';
-import 'package:la_madriguera/features/reservas/presentation/providers/reserva_activa_provider.dart';
 import 'package:la_madriguera/features/reservas/presentation/providers/reservas_provider.dart';
 import 'package:la_madriguera/features/tarifas/data/datasources/tarifas_remote_datasource.dart';
 import 'package:la_madriguera/features/vehiculos/presentation/providers/vehiculos_provider.dart';
@@ -73,19 +71,6 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
 
     throw Exception(
       'Este parqueo no tiene una tarifa activa para $_tipoVehiculo.',
-    );
-  }
-
-  ParqueoEntity _crearParqueoConTarifa(double montoHora) {
-    return ParqueoEntity(
-      id: widget.parqueo.id,
-      nombre: widget.parqueo.nombre,
-      direccion: widget.parqueo.direccion,
-      espaciosAutos: widget.parqueo.espaciosAutos,
-      espaciosMotos: widget.parqueo.espaciosMotos,
-      precioHora: montoHora,
-      latitud: widget.parqueo.latitud,
-      longitud: widget.parqueo.longitud,
     );
   }
 
@@ -159,19 +144,6 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
       return;
     }
 
-    final reservaActual = ReservaActivaProvider.reservaActivaNotifier.value;
-
-    if (reservaActual != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Ya tienes un parqueo activo. Finalízalo antes de crear otra reserva.',
-          ),
-        ),
-      );
-      return;
-    }
-
     final parqueoId = int.tryParse(widget.parqueo.id);
 
     if (parqueoId == null) {
@@ -187,7 +159,6 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
 
     try {
       final montoHora = await _obtenerMontoHora(parqueoId);
-      final parqueoConTarifa = _crearParqueoConTarifa(montoHora);
 
       final vehiculoId = await _obtenerOCrearVehiculoId();
 
@@ -196,23 +167,12 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
 
       final reservasDataSource = ref.read(reservasDataSourceProvider);
 
-      final reserva = await reservasDataSource.crearReserva(
+      await reservasDataSource.crearReserva(
         parqueoId: parqueoId,
         vehiculoId: vehiculoId,
         espacioId: _espacioSeleccionado!.id,
         fechaInicio: fechaInicio,
         fechaFin: fechaFin,
-      );
-
-      ReservaActivaProvider.iniciarReserva(
-        ReservaActivaEntity(
-          id: reserva.id.toString(),
-          parqueo: parqueoConTarifa,
-          tipoVehiculo: _tipoVehiculo == 'MOTO' ? 'Moto' : 'Auto',
-          placa: _placaController.text.trim().toUpperCase(),
-          nombreConductor: '',
-          horaEntrada: fechaInicio,
-        ),
       );
 
       ref.invalidate(misReservasProvider);
@@ -223,7 +183,7 @@ class _CrearReservaPageState extends ConsumerState<CrearReservaPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Reserva creada. Espacio ${_espacioSeleccionado!.codigo} ocupado. Tarifa: ${montoHora.toStringAsFixed(2)} Bs/hora.',
+            'Reserva creada. Espacio ${_espacioSeleccionado!.codigo} reservado. El cronómetro comenzará cuando el operador confirme tu ingreso. Tarifa: ${montoHora.toStringAsFixed(2)} Bs/hora.',
           ),
         ),
       );

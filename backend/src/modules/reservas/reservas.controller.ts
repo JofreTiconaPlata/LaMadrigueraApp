@@ -92,6 +92,22 @@ const handleReservaError = (
     return true;
   }
 
+  if (error instanceof Error && error.message === 'RESERVA_ACTIVA_EXISTS') {
+    res.status(409).json({
+      ok: false,
+      message: 'Ya existe una reserva activa para este cliente'
+    });
+    return true;
+  }
+
+  if (error instanceof Error && error.message === 'RESERVA_ALREADY_IN_USE') {
+    res.status(409).json({
+      ok: false,
+      message: 'La reserva ya tiene un ingreso activo y no puede cancelarse'
+    });
+    return true;
+  }
+
   return false;
 };
 

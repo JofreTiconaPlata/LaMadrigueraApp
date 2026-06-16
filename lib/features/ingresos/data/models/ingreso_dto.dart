@@ -1,6 +1,7 @@
 class IngresoDto {
   const IngresoDto({
     required this.id,
+    required this.reservaId,
     required this.parqueoId,
     required this.espacioId,
     required this.vehiculoId,
@@ -13,6 +14,7 @@ class IngresoDto {
   });
 
   final int id;
+  final int? reservaId;
   final int parqueoId;
   final int espacioId;
   final int vehiculoId;
@@ -28,6 +30,7 @@ class IngresoDto {
   factory IngresoDto.fromJson(Map<String, dynamic> json) {
     return IngresoDto(
       id: json['id'] as int,
+      reservaId: json['reservaId'] as int?,
       parqueoId: json['parqueoId'] as int,
       espacioId: json['espacioId'] as int,
       vehiculoId: json['vehiculoId'] as int,

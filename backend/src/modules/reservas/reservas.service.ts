@@ -40,6 +40,11 @@ type ReservaConRelaciones = {
     codigo: string;
     tipo: string;
   } | null;
+  ingreso?: {
+    id: number;
+    fechaIngreso: Date;
+    estado: string;
+  } | null;
 };
 
 const toReservaResponse = (reserva: ReservaConRelaciones): ReservaResponse => ({
@@ -72,6 +77,13 @@ const toReservaResponse = (reserva: ReservaConRelaciones): ReservaResponse => ({
         id: reserva.espacio.id,
         codigo: reserva.espacio.codigo,
         tipo: reserva.espacio.tipo,
+      }
+    : null,
+  ingreso: reserva.ingreso
+    ? {
+        id: reserva.ingreso.id,
+        fechaIngreso: reserva.ingreso.fechaIngreso,
+        estado: reserva.ingreso.estado,
       }
     : null,
 });

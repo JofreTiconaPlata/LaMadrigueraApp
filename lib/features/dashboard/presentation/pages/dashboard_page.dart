@@ -951,6 +951,7 @@ class _DashboardOverlayPanelState
   int? _vehiculoId;
   int? _espacioId;
   bool _registrandoIngreso = false;
+  final Set<int> _reservasConfirmando = <int>{};
 
   static const double _nearbyRadiusMeters = 1000;
 
@@ -1293,6 +1294,99 @@ class _DashboardOverlayPanelState
     );
   }
 
+  Future<void> _confirmarIngresoReserva(ReservaDto reserva) async {
+    final espacioId = reserva.espacioId;
+
+    if (espacioId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La reserva no tiene un espacio asignado.'),
+        ),
+      );
+      return;
+    }
+
+    if (reserva.ingreso != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta reserva ya tiene un ingreso registrado.'),
+        ),
+      );
+      return;
+    }
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final placa = reserva.vehiculo?.placa ?? 'Sin placa';
+        final espacio = reserva.espacio?.codigo ?? 'Sin código';
+
+        return AlertDialog(
+          title: const Text('Confirmar ingreso'),
+          content: Text(
+            '¿Confirmas el ingreso del vehículo $placa '
+            'al espacio $espacio?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              icon: const Icon(Icons.login_rounded),
+              label: const Text('Confirmar ingreso'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmado != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _reservasConfirmando.add(reserva.id);
+    });
+
+    try {
+      await IngresosRemoteDataSource().registrarIngreso(
+        reservaId: reserva.id,
+        parqueoId: reserva.parqueoId,
+        espacioId: espacioId,
+        vehiculoId: reserva.vehiculoId,
+      );
+
+      ref.invalidate(parqueosDashboardProvider);
+      ref.invalidate(espaciosIngresoProvider);
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ingreso confirmado correctamente.')),
+      );
+
+      setState(() {});
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo confirmar el ingreso: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _reservasConfirmando.remove(reserva.id);
+        });
+      }
+    }
+  }
+
   Widget _buildVehiculosReservadosView() {
     return FutureBuilder<List<ReservaDto>>(
       future: ReservasRemoteDataSource().getReservasOperador(),
@@ -1328,9 +1422,7 @@ class _DashboardOverlayPanelState
         final reservas = snapshot.data ?? [];
 
         final reservasPendientes = reservas.where((reserva) {
-          return reserva.estado != 'COMPLETADA' &&
-              reserva.estado != 'FINALIZADA' &&
-              reserva.estado != 'CANCELADA';
+          return reserva.estado == 'ACTIVA' && reserva.ingreso == null;
         }).toList();
 
         if (reservasPendientes.isEmpty) {
@@ -1373,24 +1465,57 @@ class _DashboardOverlayPanelState
                       ? 'Sin espacio asignado'
                       : 'Espacio #${reserva.espacioId}');
 
+              final confirmando = _reservasConfirmando.contains(reserva.id);
+
               return Card(
-                child: ListTile(
-                  leading: Icon(
-                    tipoVehiculo == 'MOTO'
-                        ? Icons.two_wheeler_rounded
-                        : Icons.directions_car_rounded,
-                    color: AppTheme.primary,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          tipoVehiculo == 'MOTO'
+                              ? Icons.two_wheeler_rounded
+                              : Icons.directions_car_rounded,
+                          color: AppTheme.primary,
+                        ),
+                        title: Text(
+                          '$tipoVehiculo - $placa',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          'Parqueo: $parqueoNombre\n'
+                          'Espacio: $espacioCodigo\n'
+                          'Estado: esperando ingreso',
+                        ),
+                        isThreeLine: true,
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: confirmando
+                              ? null
+                              : () => _confirmarIngresoReserva(reserva),
+                          icon: confirmando
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.login_rounded),
+                          label: Text(
+                            confirmando
+                                ? 'Confirmando...'
+                                : 'Confirmar ingreso',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  title: Text(
-                    '$tipoVehiculo - $placa',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    'Parqueo: $parqueoNombre\n'
-                    'Espacio: $espacioCodigo\n'
-                    'Estado: ${reserva.estado}',
-                  ),
-                  isThreeLine: true,
                 ),
               );
             }),
@@ -1435,9 +1560,7 @@ class _DashboardOverlayPanelState
         final reservas = snapshot.data ?? [];
 
         final vehiculosActivos = reservas.where((reserva) {
-          return reserva.estado != 'COMPLETADA' &&
-              reserva.estado != 'FINALIZADA' &&
-              reserva.estado != 'CANCELADA';
+          return reserva.ingreso?.estado == 'ACTIVO';
         }).toList();
 
         if (vehiculosActivos.isEmpty) {

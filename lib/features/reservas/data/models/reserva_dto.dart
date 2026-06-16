@@ -58,6 +58,28 @@ class ReservaEspacioDto {
   }
 }
 
+class ReservaIngresoDto {
+  const ReservaIngresoDto({
+    required this.id,
+    required this.fechaIngreso,
+    required this.estado,
+  });
+
+  final int id;
+  final DateTime fechaIngreso;
+  final String estado;
+
+  bool get estaActivo => estado == 'ACTIVO';
+
+  factory ReservaIngresoDto.fromJson(Map<String, dynamic> json) {
+    return ReservaIngresoDto(
+      id: json['id'] as int,
+      fechaIngreso: DateTime.parse(json['fechaIngreso'] as String).toLocal(),
+      estado: json['estado'] as String,
+    );
+  }
+}
+
 class ReservaDto {
   const ReservaDto({
     required this.id,
@@ -71,6 +93,7 @@ class ReservaDto {
     this.parqueo,
     this.vehiculo,
     this.espacio,
+    this.ingreso,
   });
 
   final int id;
@@ -84,9 +107,26 @@ class ReservaDto {
   final ReservaParqueoDto? parqueo;
   final ReservaVehiculoDto? vehiculo;
   final ReservaEspacioDto? espacio;
+  final ReservaIngresoDto? ingreso;
+
+  bool get esperandoIngreso {
+    return estado == 'ACTIVA' && ingreso == null;
+  }
+
+  bool get vehiculoEstacionado {
+    return estado == 'ACTIVA' && ingreso?.estado == 'ACTIVO';
+  }
+
+  bool get puedeCancelar {
+    return esperandoIngreso;
+  }
+
+  bool get puedeSolicitarSalida {
+    return vehiculoEstacionado;
+  }
 
   bool get estaEnProgreso {
-    return estado == 'ACTIVA' || estado == 'PENDIENTE';
+    return esperandoIngreso || vehiculoEstacionado;
   }
 
   bool get estaTerminada {
@@ -97,6 +137,7 @@ class ReservaDto {
     final parqueoJson = json['parqueo'];
     final vehiculoJson = json['vehiculo'];
     final espacioJson = json['espacio'];
+    final ingresoJson = json['ingreso'];
 
     return ReservaDto(
       id: json['id'] as int,
@@ -115,6 +156,9 @@ class ReservaDto {
           : null,
       espacio: espacioJson is Map<String, dynamic>
           ? ReservaEspacioDto.fromJson(espacioJson)
+          : null,
+      ingreso: ingresoJson is Map<String, dynamic>
+          ? ReservaIngresoDto.fromJson(ingresoJson)
           : null,
     );
   }
