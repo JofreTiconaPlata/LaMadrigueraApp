@@ -28,7 +28,7 @@ class SalidaCobroDto {
       id: json['id'] as int,
       ingresoId: json['ingresoId'] as int,
       operadorId: json['operadorId'] as int,
-      fechaSalida: DateTime.parse(json['fechaSalida'] as String),
+      fechaSalida: DateTime.parse(json['fechaSalida'] as String).toLocal(),
       tiempoTotalMinutos: json['tiempoTotalMinutos'] as int,
       montoTotal: (json['montoTotal'] as num).toDouble(),
       estadoPago: json['estadoPago'] as String,
@@ -62,7 +62,7 @@ class SalidaCobroIngresoDto {
   factory SalidaCobroIngresoDto.fromJson(Map<String, dynamic> json) {
     return SalidaCobroIngresoDto(
       id: json['id'] as int,
-      fechaIngreso: DateTime.parse(json['fechaIngreso'] as String),
+      fechaIngreso: DateTime.parse(json['fechaIngreso'] as String).toLocal(),
       estado: json['estado'] as String,
       parqueo: SalidaCobroParqueoDto.fromJson(
         json['parqueo'] as Map<String, dynamic>,
@@ -173,7 +173,7 @@ class SalidaCobroPagoDto {
       monto: (json['monto'] as num).toDouble(),
       referencia: json['referencia'] as String?,
       estado: json['estado'] as String,
-      fechaPago: DateTime.parse(json['fechaPago'] as String),
+      fechaPago: DateTime.parse(json['fechaPago'] as String).toLocal(),
     );
   }
 }

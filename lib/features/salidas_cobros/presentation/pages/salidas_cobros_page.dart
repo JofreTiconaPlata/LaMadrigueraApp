@@ -38,11 +38,11 @@ class _CobroPageState extends ConsumerState<CobroPage> {
   }
 
   String _formatearHora(DateTime fecha) {
-    final local = fecha.toLocal();
-    final hora = local.hour.toString().padLeft(2, '0');
-    final minuto = local.minute.toString().padLeft(2, '0');
+    final fechaLocal = fecha.toLocal();
 
-    return '$hora:$minuto';
+    String two(int value) => value.toString().padLeft(2, '0');
+
+    return '${two(fechaLocal.hour)}:${two(fechaLocal.minute)}';
   }
 
   Future<void> _confirmarPago(int ingresoId) async {

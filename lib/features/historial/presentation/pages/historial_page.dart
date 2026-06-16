@@ -15,13 +15,13 @@ final historialOperacionesProvider = FutureProvider<List<ReservaDto>>((
 class HistorialPage extends ConsumerWidget {
   const HistorialPage({super.key});
 
-  String _dosDigitos(int value) => value.toString().padLeft(2, '0');
-
   String _formatearFechaHora(DateTime fecha) {
-    final local = fecha.toLocal();
+    final fechaLocal = fecha.toLocal();
 
-    return '${_dosDigitos(local.day)}/${_dosDigitos(local.month)}/${local.year} '
-        '${_dosDigitos(local.hour)}:${_dosDigitos(local.minute)}';
+    String two(int value) => value.toString().padLeft(2, '0');
+
+    return '${two(fechaLocal.day)}/${two(fechaLocal.month)}/${fechaLocal.year} '
+        '${two(fechaLocal.hour)}:${two(fechaLocal.minute)}';
   }
 
   String _formatearTiempo(DateTime inicio, DateTime fin) {
